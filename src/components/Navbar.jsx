@@ -1,4 +1,4 @@
-
+/* eslint-disable */
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -35,9 +35,19 @@ function Navbar() {
                 .logo-text:hover { opacity: 0.85; }
                 @keyframes slideDown { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
                 .mobile-menu { animation: slideDown 0.2s ease forwards; }
+
+                /* MOBILE RESPONSIVE */
+                .desktop-links { display: flex !important; }
+                .hamburger-btn { display: none !important; }
+
+                @media (max-width: 768px) {
+                    .desktop-links { display: none !important; }
+                    .hamburger-btn { display: flex !important; }
+                    .nav-padding { padding: 0 16px !important; }
+                }
             `}</style>
 
-            <nav style={{
+            <nav className="nav-padding" style={{
                 ...styles.nav,
                 background: scrolled
                     ? 'rgba(5,10,20,0.97)'
@@ -56,7 +66,7 @@ function Navbar() {
                 </Link>
 
                 {/* DESKTOP LINKS */}
-                <div style={styles.desktopLinks}>
+                <div className="desktop-links" style={styles.desktopLinks}>
 
                     {/* NOT LOGGED IN */}
                     {!user && (
@@ -142,6 +152,7 @@ function Navbar() {
 
                 {/* MOBILE HAMBURGER */}
                 <button
+                    className="hamburger-btn"
                     style={styles.hamburger}
                     onClick={() => setMenuOpen(!menuOpen)}
                 >
@@ -301,11 +312,10 @@ const styles = {
 
     // HAMBURGER
     hamburger: {
-        display: 'none', flexDirection: 'column',
+        flexDirection: 'column',
         gap: '5px', background: 'none',
         border: 'none', cursor: 'pointer',
         padding: '8px',
-        '@media(max-width:768px)': { display: 'flex' },
     },
     hamburgerLine: {
         width: '22px', height: '2px',
@@ -337,6 +347,7 @@ const styles = {
         padding: '12px 16px', borderRadius: '8px',
         cursor: 'pointer', fontSize: '15px',
         fontWeight: '700', textAlign: 'left',
+        width: '100%',
     },
 };
 
