@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+
 import { useNavigate, Link } from 'react-router-dom';
 import { registerUser } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-
+import React, { useState, useEffect } from 'react';
 function Register() {
     const [formData, setFormData] = useState({
         username: '', email: '', password: '', phoneNumber: ''
