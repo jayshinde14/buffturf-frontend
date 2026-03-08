@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { createBooking } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import axios from 'axios';
 
 function BookingForm() {
     const { state } = useLocation();
@@ -72,43 +73,95 @@ function BookingForm() {
         setPlayers(players.filter((_, i) => i !== index));
     };
 
-    const handleSubmit = async () => {
+    // ─── RAZORPAY PAYMENT ───────────────────────────────────────────
+    const handlePayment = async () => {
         if (!form.fullName || !form.phone || !form.email || !form.gender || !form.govtId || !form.dob) {
             setError('Please fill all required fields!');
             return;
         }
         setLoading(true);
         setError('');
+
         try {
-            const payload = {
-                turfId: turf.id,
-                slotId: slot.id,
-                bookingDate: date,
-                players: [
-                    {
-                        name: form.fullName,
-                        age: new Date().getFullYear() - new Date(form.dob).getFullYear(),
-                        gender: form.gender,
-                        contact: form.phone,
-                        governmentId: form.govtId,
-                    },
-                    ...players.map(p => ({
-                        name: p.name,
-                        age: parseInt(p.age) || 0,
-                        gender: p.gender,
-                        contact: p.contact,
-                        governmentId: p.governmentId,
-                    }))
-                ]
+            const token = localStorage.getItem('token');
+
+            // Step 1: Create Razorpay order from backend
+            const orderRes = await axios.post(
+                'https://buffturf-backend.onrender.com/api/payments/create-order',
+                { amount: turf.pricePerHour, turfId: turf.id, slotId: slot.id },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+
+            const { orderId, amount, currency, keyId } = orderRes.data;
+
+            // Step 2: Open Razorpay popup
+            const options = {
+                key: keyId,
+                amount: amount,
+                currency: currency,
+                name: 'BuffTURF',
+                description: `Booking: ${turf.name}`,
+                order_id: orderId,
+                handler: async function (response) {
+                    // Step 3: Verify payment and create booking
+                    try {
+                        const verifyRes = await axios.post(
+                            'https://buffturf-backend.onrender.com/api/payments/verify',
+                            {
+                                razorpayOrderId: response.razorpay_order_id,
+                                razorpayPaymentId: response.razorpay_payment_id,
+                                razorpaySignature: response.razorpay_signature,
+                                turfId: turf.id,
+                                slotId: slot.id,
+                                bookingDate: date,
+                                players: [
+                                    {
+                                        name: form.fullName,
+                                        age: new Date().getFullYear() - new Date(form.dob).getFullYear(),
+                                        gender: form.gender,
+                                        contact: form.phone,
+                                        governmentId: form.govtId,
+                                    },
+                                    ...players.map(p => ({
+                                        name: p.name,
+                                        age: parseInt(p.age) || 0,
+                                        gender: p.gender,
+                                        contact: p.contact,
+                                        governmentId: p.governmentId,
+                                    }))
+                                ]
+                            },
+                            { headers: { Authorization: `Bearer ${token}` } }
+                        );
+                        navigate('/booking-confirmation', { state: { booking: verifyRes.data } });
+                    } catch (err) {
+                        setError('Payment verified but booking failed! Contact support.');
+                        setLoading(false);
+                    }
+                },
+                prefill: {
+                    name: form.fullName,
+                    email: form.email,
+                    contact: form.phone,
+                },
+                theme: { color: color },
+                modal: {
+                    ondismiss: function () {
+                        setError('Payment cancelled! Please try again.');
+                        setLoading(false);
+                    }
+                }
             };
-            const res = await createBooking(payload);
-            navigate('/booking-confirmation', { state: { booking: res.data } });
+
+            const razorpay = new window.Razorpay(options);
+            razorpay.open();
+
         } catch (err) {
-            setError(err.response?.data || 'Booking failed! Slot may already be taken.');
-        } finally {
+            setError('Payment initialization failed! Please try again.');
             setLoading(false);
         }
     };
+    // ────────────────────────────────────────────────────────────────
 
     return (
         <div style={styles.page}>
@@ -271,7 +324,23 @@ function BookingForm() {
                     </div>
                 )}
 
-                {/* Confirm Button */}
+                {/* Payment Notice */}
+                <div style={styles.paymentNotice}>
+                    <span style={{fontSize: '20px'}}>🔒</span>
+                    <div>
+                        <p style={{color: '#ffffff', fontWeight: '700', margin: '0 0 2px 0', fontSize: '14px'}}>
+                            Secure Payment via Razorpay
+                        </p>
+                        <p style={{color: '#64748b', margin: 0, fontSize: '12px'}}>
+                            UPI • Cards • Net Banking • Wallets accepted
+                        </p>
+                    </div>
+                    <span style={{marginLeft: 'auto', color: color, fontWeight: '800', fontSize: '18px'}}>
+                        ₹{turf.pricePerHour}
+                    </span>
+                </div>
+
+                {/* Buttons */}
                 <div style={styles.confirmRow}>
                     <button
                         style={styles.cancelBtn}
@@ -281,10 +350,10 @@ function BookingForm() {
                     </button>
                     <button
                         style={{...styles.confirmBtn, background: color, opacity: loading ? 0.7 : 1}}
-                        onClick={handleSubmit}
+                        onClick={handlePayment}
                         disabled={loading}
                     >
-                        {loading ? '⏳ Booking...' : '✅ Confirm Booking'}
+                        {loading ? '⏳ Processing...' : `💳 Pay ₹${turf.pricePerHour} & Book`}
                     </button>
                 </div>
             </div>
@@ -301,9 +370,7 @@ const styles = {
         padding: '12px 24px', borderRadius: '8px', cursor: 'pointer',
         fontSize: '15px', fontWeight: '800',
     },
-
     body: { maxWidth: '1100px', margin: '0 auto', padding: '32px' },
-
     summaryCard: {
         background: '#111827', borderRadius: '12px',
         padding: '24px 28px', marginBottom: '28px',
@@ -319,7 +386,6 @@ const styles = {
     summaryPriceLabel: { color: '#64748b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' },
     summaryPrice: { fontSize: '36px', fontWeight: '800', margin: '0 0 4px 0' },
     summaryPriceSub: { color: '#64748b', fontSize: '12px' },
-
     formGrid: {
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
@@ -331,7 +397,6 @@ const styles = {
     },
     formTitle: { color: '#ffffff', fontSize: '18px', fontWeight: '800', marginBottom: '4px' },
     formSub: { color: '#64748b', fontSize: '13px', marginBottom: '20px' },
-
     fieldGrid: { display: 'flex', flexDirection: 'column', gap: '16px' },
     field: {},
     label: { color: '#94a3b8', fontSize: '12px', fontWeight: '700', letterSpacing: '0.5px', display: 'block', marginBottom: '6px', textTransform: 'uppercase' },
@@ -342,7 +407,6 @@ const styles = {
         fontSize: '14px', boxSizing: 'border-box',
         transition: 'border-color 0.2s',
     },
-
     playersTitleRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' },
     addPlayerBtn: {
         color: '#000', border: 'none', padding: '10px 16px',
@@ -378,12 +442,17 @@ const styles = {
         border: '1px solid #334155', borderRadius: '6px',
         color: '#ffffff', fontSize: '13px',
     },
-
     errorBox: {
         background: '#1a0808', border: '1px solid #ef444444',
         color: '#ef4444', padding: '14px 20px',
         borderRadius: '8px', marginBottom: '20px',
         fontSize: '14px',
+    },
+    paymentNotice: {
+        background: '#0f172a', border: '1px solid #1e293b',
+        borderRadius: '10px', padding: '16px 20px',
+        display: 'flex', alignItems: 'center',
+        gap: '14px', marginBottom: '20px',
     },
     confirmRow: {
         display: 'flex', justifyContent: 'flex-end',
