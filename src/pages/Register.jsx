@@ -49,7 +49,7 @@ function Register() {
             const response = await registerUser(formData);
             const data = response.data;
             login({ username: data.username, email: data.email, role: data.role }, data.token);
-            navigate('/turfs');
+            navigate('/login');
         } catch (err) {
             setError(err.response?.data?.message || 'Registration failed!');
         } finally {

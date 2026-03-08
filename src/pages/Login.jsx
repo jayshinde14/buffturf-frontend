@@ -47,7 +47,7 @@ function Login() {
             const data = response.data;
             login({ username: data.username, email: data.email, role: data.role }, data.token);
             if (data.role === 'ADMIN') navigate('/admin/dashboard');
-            else navigate('/turfs');
+            else navigate('/');
         } catch (err) {
             setError('Invalid username or password!');
         } finally {
