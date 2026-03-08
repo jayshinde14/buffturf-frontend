@@ -54,3 +54,4 @@ export const generateSlots = (turfId, date) =>
     API.post(`/api/admin/turfs/${turfId}/slots/generate?date=${date}`);
 export const adminCancelBooking = (id) =>
     API.put(`/api/admin/bookings/${id}/cancel`);
+export const getEarnings = () => API.get('/api/admin/earnings');

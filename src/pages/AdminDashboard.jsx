@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { getDashboardStats, getAllBookings, getAllUsers, adminCancelBooking } from '../services/api';
+import { getDashboardStats, getAllBookings, getAllUsers, adminCancelBooking, getEarnings } from '../services/api';
 
 function AdminDashboard() {
     const navigate = useNavigate();
@@ -11,15 +11,23 @@ function AdminDashboard() {
     const [users, setUsers] = useState([]);
     const [activeTab, setActiveTab] = useState('overview');
     const [loading, setLoading] = useState(true);
+
+    const [earnings, setEarnings] = useState({
+    totalRevenue: 0, todayRevenue: 0, monthRevenue: 0,
+    confirmedBookings: 0, turfBreakdown: [], recentPayments: []
+});
     const [searchBooking, setSearchBooking] = useState('');
     const [searchUser, setSearchUser] = useState('');
 
     useEffect(() => { loadAll(); }, []);
 
-    const loadAll = async () => {
+    const loadAll = async () => {   
         setLoading(true);
         try {
-            const [statsRes, bookingsRes] = await Promise.all([getDashboardStats(), getAllBookings()]);
+            const [statsRes, bookingsRes, earningsRes] = await Promise.all([
+    getDashboardStats(), getAllBookings(), getEarnings()
+]);
+setEarnings(earningsRes.data || {});
             setStats(statsRes.data || {});
             setBookings(Array.isArray(bookingsRes.data) ? bookingsRes.data : []);
         } catch (err) { console.error('Dashboard error:', err); }
@@ -183,6 +191,7 @@ function AdminDashboard() {
                         { id: 'overview', label: '📊 Overview' },
                         { id: 'bookings', label: `📋 All Bookings (${bookings.length})` },
                         { id: 'users',    label: `👥 Users (${users.length})` },
+{ id: 'earnings', label: `💰 Earnings` },
                     ].map(t => (
                         <button key={t.id} className="tab-btn"
                             onClick={() => setActiveTab(t.id)}
@@ -404,7 +413,153 @@ function AdminDashboard() {
                                 )}
                             </div>
                         )}
+                        {/* ══════ EARNINGS TAB ══════ */}
+{activeTab === 'earnings' && (
+    <div>
+        <h2 style={styles.secTitle}>💰 Earnings & Revenue</h2>
+        <p style={{color: '#64748b', fontSize: '13px', marginBottom: '24px', marginTop: '4px'}}>
+            Complete financial overview of BuffTURF
+        </p>
 
+        {/* Top Revenue Cards */}
+        <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px', marginBottom: '32px'}}>
+            {[
+                { label: 'Total Revenue',       value: `₹${earnings.totalRevenue || 0}`,   icon: '💰', color: '#f59e0b', bg: '#2d1f00', sub: 'All time confirmed' },
+                { label: "Today's Revenue",     value: `₹${earnings.todayRevenue || 0}`,   icon: '📅', color: '#22c55e', bg: '#052e16', sub: 'Earned today' },
+                { label: "This Month",          value: `₹${earnings.monthRevenue || 0}`,   icon: '📆', color: '#60a5fa', bg: '#0c1a3a', sub: new Date().toLocaleString('default', {month: 'long'}) },
+                { label: 'Paid Bookings',       value: earnings.confirmedBookings || 0,    icon: '✅', color: '#4ade80', bg: '#052e16', sub: 'Confirmed bookings' },
+            ].map((s, i) => (
+                <div key={i} className="stat-card" style={{
+                    background: s.bg, borderRadius: '14px',
+                    padding: '20px', border: `1px solid ${s.color}22`,
+                }}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: '12px'}}>
+                        <span style={{fontSize: '28px'}}>{s.icon}</span>
+                        <span style={{color: s.color + '99', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase'}}>{s.sub}</span>
+                    </div>
+                    <p style={{fontFamily: "'Bebas Neue'", fontSize: '38px', color: s.color, margin: '0 0 4px 0', letterSpacing: '1px'}}>{s.value}</p>
+                    <p style={{color: '#64748b', fontSize: '13px', margin: 0}}>{s.label}</p>
+                </div>
+            ))}
+        </div>
+
+        {/* Per Turf Breakdown */}
+        <div style={styles.section}>
+            <h2 style={styles.secTitle}>🏟️ Revenue Per Turf</h2>
+            <p style={{color: '#64748b', fontSize: '13px', marginBottom: '16px'}}>Earnings breakdown by each turf</p>
+
+            {!earnings.turfBreakdown || earnings.turfBreakdown.length === 0 ? (
+                <div style={styles.emptyBox}>
+                    <p style={{fontSize: '48px'}}>💰</p>
+                    <p style={{color: '#94a3b8'}}>No earnings data yet! Add turfs and get bookings!</p>
+                </div>
+            ) : (
+                <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px'}}>
+                    {[...earnings.turfBreakdown]
+                        .sort((a, b) => b.totalEarned - a.totalEarned)
+                        .map((turf, i) => {
+                            const sportColors = { Football: '#60a5fa', Cricket: '#4ade80', Basketball: '#fb923c', Badminton: '#e879f9', Tennis: '#a3e635' };
+                            const color = sportColors[turf.sportType] || '#22c55e';
+                            const sportEmojis = { Football: '⚽', Cricket: '🏏', Basketball: '🏀', Badminton: '🏸', Tennis: '🎾' };
+                            const emoji = sportEmojis[turf.sportType] || '🏟️';
+                            return (
+                                <div key={i} style={{
+                                    background: '#111827', borderRadius: '14px',
+                                    overflow: 'hidden', border: `1px solid ${color}22`,
+                                }}>
+                                    <div style={{height: '3px', background: `linear-gradient(90deg, ${color}, transparent)`}}/>
+                                    <div style={{padding: '20px'}}>
+                                        <div style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px'}}>
+                                            <span style={{
+                                                fontSize: '24px', width: '44px', height: '44px',
+                                                background: color + '18', borderRadius: '10px',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                border: `1px solid ${color}33`, flexShrink: 0,
+                                            }}>{emoji}</span>
+                                            <div>
+                                                <p style={{color: '#ffffff', fontWeight: '800', margin: '0 0 2px 0', fontSize: '15px'}}>{turf.turfName}</p>
+                                                <p style={{color: '#64748b', fontSize: '12px', margin: 0}}>📍 {turf.location}</p>
+                                            </div>
+                                            {i === 0 && (
+                                                <span style={{
+                                                    marginLeft: 'auto', background: '#f59e0b22',
+                                                    color: '#f59e0b', border: '1px solid #f59e0b33',
+                                                    padding: '3px 8px', borderRadius: '6px',
+                                                    fontSize: '10px', fontWeight: '800',
+                                                }}>🏆 TOP</span>
+                                            )}
+                                        </div>
+                                        <div style={{display: 'flex', background: '#0f172a', borderRadius: '10px', overflow: 'hidden'}}>
+                                            {[
+                                                { val: turf.bookingCount, label: 'Bookings', color: '#60a5fa' },
+                                                { val: `₹${turf.pricePerHour}`, label: 'Per Hour', color: color },
+                                                { val: `₹${turf.totalEarned}`, label: 'Total Earned', color: '#f59e0b' },
+                                            ].map((s, j) => (
+                                                <div key={j} style={{flex: 1, textAlign: 'center', padding: '12px 8px', borderRight: j < 2 ? '1px solid #1e293b' : 'none'}}>
+                                                    <p style={{color: s.color, fontSize: '18px', fontWeight: '800', margin: '0 0 2px 0'}}>{s.val}</p>
+                                                    <p style={{color: '#64748b', fontSize: '10px', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px'}}>{s.label}</p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                </div>
+            )}
+        </div>
+
+        {/* Recent Payments Table */}
+        <div style={styles.section}>
+            <h2 style={styles.secTitle}>🧾 Recent Payments</h2>
+            <p style={{color: '#64748b', fontSize: '13px', marginBottom: '16px'}}>Last 10 confirmed payments</p>
+
+            {!earnings.recentPayments || earnings.recentPayments.length === 0 ? (
+                <div style={styles.emptyBox}>
+                    <p style={{fontSize: '48px'}}>🧾</p>
+                    <p style={{color: '#94a3b8'}}>No payments yet!</p>
+                </div>
+            ) : (
+                <div style={styles.tableWrap}>
+                    <table style={styles.table}>
+                        <thead>
+                            <tr style={styles.thead}>
+                                {['#', 'Booking ID', 'User', 'Turf', 'Date', 'Amount', 'Payment ID', 'Status'].map(h => (
+                                    <th key={h} style={styles.th}>{h}</th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {earnings.recentPayments.map((b, i) => (
+                                <tr key={b.id} style={{...styles.tr, background: i % 2 === 0 ? '#0a0f1e' : '#0f172a'}}>
+                                    <td style={{...styles.td, color: '#475569'}}>{i + 1}</td>
+                                    <td style={{...styles.td, color: '#22c55e', fontWeight: '800', fontFamily: 'monospace', fontSize: '12px'}}>{b.bookingCode}</td>
+                                    <td style={{...styles.td, color: '#ffffff', fontWeight: '700'}}>{b.user?.username}</td>
+                                    <td style={styles.td}>
+                                        <p style={{color: '#94a3b8', margin: '0 0 2px 0', fontSize: '13px'}}>{b.turf?.name}</p>
+                                        <p style={{color: '#475569', margin: 0, fontSize: '11px'}}>{b.turf?.location}</p>
+                                    </td>
+                                    <td style={{...styles.td, color: '#94a3b8'}}>{b.bookingDate}</td>
+                                    <td style={{...styles.td, color: '#f59e0b', fontWeight: '800', fontSize: '15px'}}>₹{b.turf?.pricePerHour || 0}</td>
+                                    <td style={{...styles.td, color: '#60a5fa', fontFamily: 'monospace', fontSize: '11px'}}>
+                                        {b.paymentId ? b.paymentId.substring(0, 16) + '...' : 'N/A'}
+                                    </td>
+                                    <td style={styles.td}>
+                                        <span style={{
+                                            ...styles.statusBadge,
+                                            background: '#22c55e22', color: '#22c55e',
+                                            border: '1px solid #22c55e33',
+                                        }}>✅ PAID</span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    </div>
+)}
                         {/* ══════ USERS TAB ══════ */}
                         {activeTab === 'users' && (
                             <div>
