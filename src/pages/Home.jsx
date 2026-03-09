@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import { searchTurfs } from '../services/api';
 
 function Home() {
@@ -112,8 +112,6 @@ function Home() {
 
             {/* ===== HERO SECTION ===== */}
             <div style={styles.hero}>
-
-                {/* Background images cycling */}
                 <div style={styles.bgContainer}>
                     {slides.map((s, i) => (
                         <div key={i} style={{
@@ -123,22 +121,17 @@ function Home() {
                             transition: 'opacity 1.2s ease',
                         }}/>
                     ))}
-                    {/* Dark gradient overlay */}
                     <div style={styles.bgOverlay}/>
-                    {/* Color tint */}
                     <div style={{
                         ...styles.bgTint,
                         background: current.color + '12',
                         transition: 'background 0.8s ease',
                     }}/>
-                    {/* Bottom fade */}
                     <div style={styles.bgBottomFade}/>
                 </div>
 
-                {/* Hero Content */}
                 <div style={styles.heroContent}>
                     <div style={styles.heroInner}>
-
                         {/* LEFT */}
                         <div style={styles.heroLeft}>
                             <div className="hero-tag" style={{
@@ -188,7 +181,6 @@ function Home() {
                                 </button>
                             </div>
 
-                            {/* Quick stats */}
                             <div style={styles.heroStats}>
                                 {[
                                     { val: '14+', label: 'Turfs' },
@@ -204,7 +196,7 @@ function Home() {
                             </div>
                         </div>
 
-                        {/* RIGHT — Emoji */}
+                        {/* RIGHT */}
                         <div style={styles.heroRight}>
                             <div style={{
                                 ...styles.emojiCircle,
@@ -216,8 +208,6 @@ function Home() {
                                     {current.emoji}
                                 </span>
                             </div>
-
-                            {/* Sport name badge */}
                             <div style={{
                                 ...styles.sportNameBadge,
                                 color: current.color,
@@ -292,7 +282,6 @@ function Home() {
                             }}
                             onClick={() => navigate(`/turfs?sportType=${s.name}`)}
                         >
-                            {/* Glow bg */}
                             <div style={{
                                 position: 'absolute', inset: 0,
                                 background: `radial-gradient(circle at 50% 40%, ${s.color}08 0%, transparent 70%)`,
@@ -306,12 +295,7 @@ function Home() {
                             }}>
                                 <span style={{fontSize: '56px'}}>{s.emoji}</span>
                             </div>
-                            <h3 style={{
-                                ...styles.sportName,
-                                color: s.color,
-                            }}>
-                                {s.name}
-                            </h3>
+                            <h3 style={{...styles.sportName, color: s.color}}>{s.name}</h3>
                             <div style={{
                                 ...styles.sportBookBtn,
                                 background: s.color + '22',
@@ -354,31 +338,18 @@ function Home() {
                                 <div
                                     key={turf.id}
                                     className="turf-card"
-                                    style={{
-                                        ...styles.venueCard,
-                                        border: `1px solid ${color}22`,
-                                    }}
+                                    style={{...styles.venueCard, border: `1px solid ${color}22`}}
                                     onClick={() => navigate(`/turfs/${turf.id}`)}
                                 >
-                                    {/* Card image */}
                                     <div style={{
                                         ...styles.venueImg,
                                         background: `linear-gradient(135deg, ${color}18 0%, #0a0f1a 100%)`,
                                         borderBottom: `2px solid ${color}22`,
                                     }}>
                                         <span style={{fontSize: '64px'}}>{getTurfEmoji(turf.sportType)}</span>
-                                        <div style={{
-                                            ...styles.venueSportBadge,
-                                            background: color,
-                                        }}>
-                                            {turf.sportType}
-                                        </div>
-                                        <div style={styles.venuePriceBadge}>
-                                            ₹{turf.pricePerHour}/hr
-                                        </div>
+                                        <div style={{...styles.venueSportBadge, background: color}}>{turf.sportType}</div>
+                                        <div style={styles.venuePriceBadge}>₹{turf.pricePerHour}/hr</div>
                                     </div>
-
-                                    {/* Card info */}
                                     <div style={styles.venueBody}>
                                         <h3 style={styles.venueName}>{turf.name}</h3>
                                         <p style={styles.venueLocation}>📍 {turf.location}</p>
@@ -442,15 +413,8 @@ function Home() {
                         { icon: '🏆', title: 'Premium Venues', text: 'All turfs are verified, well-maintained, and ready for play.', color: '#fb923c' },
                         { icon: '📱', title: 'QR Confirmation', text: 'Get a unique QR code for every booking — show up and play!', color: '#e879f9' },
                     ].map((w, i) => (
-                        <div key={i} style={{
-                            ...styles.whyCard,
-                            border: `1px solid ${w.color}22`,
-                        }}>
-                            <div style={{
-                                ...styles.whyIconBox,
-                                background: w.color + '15',
-                                border: `1px solid ${w.color}33`,
-                            }}>
+                        <div key={i} style={{...styles.whyCard, border: `1px solid ${w.color}22`}}>
+                            <div style={{...styles.whyIconBox, background: w.color + '15', border: `1px solid ${w.color}33`}}>
                                 <span style={{fontSize: '32px'}}>{w.icon}</span>
                             </div>
                             <h3 style={{...styles.whyTitle, color: w.color}}>{w.title}</h3>
@@ -467,51 +431,15 @@ function Home() {
                     <h2 style={styles.ctaTitle}>Ready to Play? 🚀</h2>
                     <p style={styles.ctaSub}>Join thousands of sports enthusiasts booking turfs on BuffTURF every day!</p>
                     <div style={styles.ctaBtns}>
-                        <button style={styles.ctaBtn} onClick={() => navigate('/turfs')}>
-                            🏟️ Find Turfs Now
-                        </button>
-                        <button style={styles.ctaSecBtn} onClick={() => navigate('/register')}>
-                            Register Free →
-                        </button>
+                        <button style={styles.ctaBtn} onClick={() => navigate('/turfs')}>🏟️ Find Turfs Now</button>
+                        <button style={styles.ctaSecBtn} onClick={() => navigate('/register')}>Register Free →</button>
                     </div>
                 </div>
             </div>
 
-            {/* ===== FOOTER ===== */}
-            <footer style={styles.footer}>
-                <div style={styles.footerInner}>
-                    <div style={styles.footerBrand}>
-                        <h3 style={styles.footerLogo}>🏟️ BuffTURF</h3>
-                        <p style={styles.footerTagline}>India's #1 Sports Turf Booking Platform</p>
-                        <div style={{marginTop: '16px'}}>
-                            <p style={styles.footerContact}>📍 Solapur, Maharashtra</p>
-                            <p style={styles.footerContact}>📞 +91 7420927739</p>
-                            <p style={styles.footerContact}>✉️ buffturf@gmail.com</p>
-                        </div>
-                    </div>
-                    <div style={styles.footerCol}>
-                        <h4 style={styles.footerColTitle}>Quick Links</h4>
-                        {[['Home','/'],['Find Turfs','/turfs'],['Login','/login'],['Register','/register'],['My Bookings','/my-bookings']].map(([label, path]) => (
-                            <p key={label} className="footer-link" style={styles.footerLink} onClick={() => navigate(path)}>{label}</p>
-                        ))}
-                    </div>
-                    <div style={styles.footerCol}>
-                        <h4 style={styles.footerColTitle}>Sports</h4>
-                        {['Cricket','Football','Basketball','Tennis','Badminton'].map(s => (
-                            <p key={s} className="footer-link" style={styles.footerLink} onClick={() => navigate(`/turfs?sportType=${s}`)}>{s}</p>
-                        ))}
-                    </div>
-                    <div style={styles.footerCol}>
-                        <h4 style={styles.footerColTitle}>Cities</h4>
-                        {['Solapur','Pune','Mumbai'].map(c => (
-                            <p key={c} className="footer-link" style={styles.footerLink} onClick={() => navigate(`/turfs?location=${c}`)}>{c}</p>
-                        ))}
-                    </div>
-                </div>
-                <div style={styles.footerBottom}>
-                    <p style={styles.footerCopy}>Copyright © 2026 — Made by Jay Shinde — BuffTURF</p>
-                </div>
-            </footer>
+            {/* ===== NEW FOOTER ===== */}
+            <Footer />
+
         </div>
     );
 }
@@ -519,7 +447,6 @@ function Home() {
 const styles = {
     page: { backgroundColor: '#050a14', minHeight: '100vh', fontFamily: "'Barlow', sans-serif" },
 
-    // HERO
     hero: { position: 'relative', minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflow: 'hidden' },
     bgContainer: { position: 'absolute', inset: 0, zIndex: 0 },
     bgSlide: { position: 'absolute', inset: 0, backgroundSize: 'cover', backgroundPosition: 'center' },
@@ -552,20 +479,17 @@ const styles = {
     searchInput: { flex: 1, padding: '18px 0', background: 'transparent', border: 'none', color: '#ffffff', fontSize: '15px', outline: 'none' },
     searchBtn: { padding: '18px 28px', border: 'none', color: '#000', fontSize: '15px', fontWeight: '800', cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s' },
 
-    // SECTIONS
     section: { maxWidth: '1200px', margin: '0 auto', padding: '72px 32px' },
     secHeader: { marginBottom: '36px' },
     secTitle: { fontFamily: "'Bebas Neue', sans-serif", color: '#ffffff', fontSize: '42px', letterSpacing: '2px', margin: '0 0 6px 0' },
     secSub: { color: '#64748b', fontSize: '15px', margin: 0 },
 
-    // SPORTS GRID
     sportsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '16px' },
     sportCard: { borderRadius: '16px', padding: '28px 16px', textAlign: 'center', cursor: 'pointer', position: 'relative', overflow: 'hidden' },
     sportEmojiBox: { width: '90px', height: '90px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto' },
     sportName: { fontFamily: "'Bebas Neue', sans-serif", fontSize: '22px', letterSpacing: '2px', margin: '0 0 14px 0' },
     sportBookBtn: { display: 'inline-block', padding: '8px 18px', borderRadius: '8px', fontSize: '13px', fontWeight: '800', cursor: 'pointer', letterSpacing: '0.5px' },
 
-    // FEATURED
     featuredSection: { background: '#070d1a', padding: '72px 32px' },
     featuredHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', maxWidth: '1200px', margin: '0 auto 36px auto', flexWrap: 'wrap', gap: '16px' },
     seeAllBtn: { background: 'transparent', color: '#22c55e', border: '1px solid #22c55e44', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', transition: 'all 0.2s' },
@@ -584,7 +508,6 @@ const styles = {
     venueBtn: { color: '#000', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '800', transition: 'all 0.2s' },
     loadingBox: { textAlign: 'center', padding: '60px', maxWidth: '1200px', margin: '0 auto' },
 
-    // HOW IT WORKS
     howSection: { maxWidth: '1200px', margin: '0 auto', padding: '72px 32px', textAlign: 'center' },
     howGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px', marginTop: '36px' },
     howCard: { background: '#111827', borderRadius: '16px', padding: '36px 24px', border: '1px solid #1e293b', position: 'relative' },
@@ -592,7 +515,6 @@ const styles = {
     howTitle: { color: '#ffffff', fontSize: '18px', fontWeight: '800', marginBottom: '10px' },
     howText: { color: '#64748b', fontSize: '14px', lineHeight: 1.7 },
 
-    // WHY
     whySection: { background: '#070d1a', padding: '72px 32px' },
     whyGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '20px', maxWidth: '1200px', margin: '36px auto 0 auto' },
     whyCard: { background: '#111827', borderRadius: '14px', padding: '28px', transition: 'all 0.2s' },
@@ -600,7 +522,6 @@ const styles = {
     whyTitle: { fontSize: '16px', fontWeight: '800', marginBottom: '8px' },
     whyText: { color: '#64748b', fontSize: '13px', lineHeight: 1.7, margin: 0 },
 
-    // CTA
     ctaBanner: { position: 'relative', overflow: 'hidden', padding: '80px 32px', textAlign: 'center' },
     ctaBannerBg: { position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #0c1a3a 0%, #052e16 50%, #0c1a3a 100%)' },
     ctaContent: { position: 'relative', zIndex: 1, maxWidth: '600px', margin: '0 auto' },
@@ -609,19 +530,6 @@ const styles = {
     ctaBtns: { display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' },
     ctaBtn: { background: '#22c55e', color: '#000', border: 'none', padding: '16px 32px', borderRadius: '10px', fontSize: '16px', fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s' },
     ctaSecBtn: { background: 'transparent', color: '#ffffff', border: '1px solid rgba(255,255,255,0.2)', padding: '16px 28px', borderRadius: '10px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s' },
-
-    // FOOTER
-    footer: { backgroundColor: '#050a14', borderTop: '1px solid #0f172a', padding: '60px 32px 24px 32px' },
-    footerInner: { display: 'flex', gap: '48px', maxWidth: '1200px', margin: '0 auto 40px auto', flexWrap: 'wrap' },
-    footerBrand: { flex: 2, minWidth: '220px' },
-    footerLogo: { fontFamily: "'Bebas Neue', sans-serif", color: '#22c55e', fontSize: '28px', letterSpacing: '3px', marginBottom: '8px' },
-    footerTagline: { color: '#475569', fontSize: '13px', marginBottom: '0' },
-    footerContact: { color: '#64748b', fontSize: '13px', marginBottom: '6px' },
-    footerCol: { flex: 1, minWidth: '130px' },
-    footerColTitle: { color: '#ffffff', fontSize: '13px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px' },
-    footerLink: { color: '#64748b', fontSize: '13px', marginBottom: '10px', cursor: 'pointer', transition: 'color 0.2s' },
-    footerBottom: { borderTop: '1px solid #0f172a', paddingTop: '20px', textAlign: 'center', maxWidth: '1200px', margin: '0 auto' },
-    footerCopy: { color: '#334155', fontSize: '13px' },
 };
 
 export default Home;
