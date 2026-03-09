@@ -1,15 +1,15 @@
-
-
 import { useNavigate, Link } from 'react-router-dom';
 import { loginUser } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import React, { useState, useEffect } from 'react';
+
 function Login() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [activeSlide, setActiveSlide] = useState(0);
+    const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
     const { login } = useAuth();
     const navigate = useNavigate();
@@ -22,20 +22,21 @@ function Login() {
         { sport: 'Badminton', emoji: '🏸', color: '#e879f9' },
     ];
 
-    // Unsplash sports turf images — free, no API key needed
-   const bgImages = [
-    'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1600&q=80', // football field night
-    'https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=1600&q=80', // 🏏 Cricket field
-    'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=1600&q=80', // basketball court
-    'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=1600&q=80', // tennis court
-    'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=1600&q=80', // 🏸 Badminton court
-];
+    const bgImages = [
+        'https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=1600&q=80',
+        'https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=1600&q=80',
+        'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=1600&q=80',
+        'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=1600&q=80',
+        'https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?w=1600&q=80',
+    ];
 
     useEffect(() => {
         const timer = setInterval(() => {
             setActiveSlide(prev => (prev + 1) % slides.length);
         }, 3000);
-        return () => clearInterval(timer);
+        const handleResize = () => setIsMobile(window.innerWidth <= 768);
+        window.addEventListener('resize', handleResize);
+        return () => { clearInterval(timer); window.removeEventListener('resize', handleResize); };
     }, []);
 
     const handleLogin = async (e) => {
@@ -67,7 +68,6 @@ function Login() {
                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
                 @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
                 @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.08); } }
-                @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
                 .login-btn:hover { opacity: 0.88; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
                 .register-btn:hover { background: ${current.color}11 !important; }
                 .sport-dot { transition: all 0.3s; cursor: pointer; }
@@ -77,114 +77,70 @@ function Login() {
                 .sport-emoji-main { animation: pulse 2.5s ease-in-out infinite; display: inline-block; }
             `}</style>
 
-            {/* BACKGROUND IMAGES — cycling */}
+            {/* BACKGROUND */}
             <div style={styles.bgContainer}>
                 {bgImages.map((img, i) => (
-                    <div
-                        key={i}
-                        className="bg-slide"
-                        style={{
-                            ...styles.bgSlide,
-                            backgroundImage: `url(${img})`,
-                            opacity: i === activeSlide ? 1 : 0,
-                        }}
-                    />
+                    <div key={i} className="bg-slide" style={{
+                        ...styles.bgSlide,
+                        backgroundImage: `url(${img})`,
+                        opacity: i === activeSlide ? 1 : 0,
+                    }}/>
                 ))}
-                {/* Dark overlay */}
-                <div style={{
-                    ...styles.overlay,
-                    background: `linear-gradient(135deg, rgba(5,10,20,0.85) 0%, rgba(5,10,20,0.6) 50%, rgba(5,10,20,0.92) 100%)`,
-                }}/>
-                {/* Sport color tint */}
-                <div style={{
-                    ...styles.colorTint,
-                    background: current.color + '15',
-                    transition: 'background 0.8s ease',
-                }}/>
+                <div style={{ ...styles.overlay, background: `linear-gradient(135deg, rgba(5,10,20,0.88) 0%, rgba(5,10,20,0.65) 50%, rgba(5,10,20,0.95) 100%)` }}/>
+                <div style={{ ...styles.colorTint, background: current.color + '15', transition: 'background 0.8s ease' }}/>
             </div>
 
             {/* MAIN CONTENT */}
-            <div style={styles.content}>
+            <div style={{ ...styles.content, flexDirection: isMobile ? 'column' : 'row', padding: isMobile ? '24px 16px' : '40px', gap: isMobile ? '24px' : '60px', alignItems: isMobile ? 'stretch' : 'center' }}>
 
-                {/* LEFT — Branding */}
-                <div style={styles.leftSide}>
-
-                    {/* Logo */}
-                    <div style={styles.logo}>
-                        <span style={styles.logoEmoji}>🏟️</span>
-                        <span style={styles.logoText}>BuffTURF</span>
-                    </div>
-
-                    {/* Big Sport Emoji */}
-                    <div style={styles.heroSection}>
-                        <div style={{
-                            ...styles.emojiCircle,
-                            border: `3px solid ${current.color}55`,
-                            boxShadow: `0 0 80px ${current.color}33, 0 0 160px ${current.color}11`,
-                            transition: 'all 0.6s ease',
-                        }}>
-                            <span className="sport-emoji-main" style={{fontSize: '90px'}}>
-                                {current.emoji}
-                            </span>
+                {/* LEFT — Branding (hidden on mobile, show mini version) */}
+                {!isMobile ? (
+                    <div style={styles.leftSide}>
+                        <div style={styles.logo}>
+                            <span style={styles.logoEmoji}>🏟️</span>
+                            <span style={styles.logoText}>BuffTURF</span>
                         </div>
-
-                        <h1 style={{
-                            ...styles.heroTitle,
-                            color: current.color,
-                            transition: 'color 0.5s ease',
-                        }}>
-                            {current.sport}
-                        </h1>
-                        <p style={styles.heroSub}>
-                            India's #1 Sports Turf Booking Platform
-                        </p>
-                    </div>
-
-                    {/* Sport switcher dots */}
-                    <div style={styles.dotsRow}>
-                        {slides.map((s, i) => (
-                            <button
-                                key={i}
-                                className="sport-dot"
-                                onClick={() => setActiveSlide(i)}
-                                style={{
-                                    ...styles.dot,
-                                    background: i === activeSlide ? s.color : 'rgba(255,255,255,0.2)',
-                                    width: i === activeSlide ? '32px' : '10px',
-                                    boxShadow: i === activeSlide ? `0 0 10px ${s.color}` : 'none',
-                                }}
-                            />
-                        ))}
-                    </div>
-
-                    {/* Stats */}
-                    <div style={styles.statsRow}>
-                        {[
-                            { val: '14+', label: 'Turfs' },
-                            { val: '5', label: 'Sports' },
-                            { val: '3', label: 'Cities' },
-                            { val: '24/7', label: 'Booking' },
-                        ].map((s, i) => (
-                            <div key={i} style={styles.statItem}>
-                                <p style={{...styles.statVal, color: current.color}}>{s.val}</p>
-                                <p style={styles.statLabel}>{s.label}</p>
+                        <div style={styles.heroSection}>
+                            <div style={{ ...styles.emojiCircle, border: `3px solid ${current.color}55`, boxShadow: `0 0 80px ${current.color}33`, transition: 'all 0.6s ease' }}>
+                                <span className="sport-emoji-main" style={{ fontSize: '90px' }}>{current.emoji}</span>
                             </div>
-                        ))}
+                            <h1 style={{ ...styles.heroTitle, color: current.color, transition: 'color 0.5s ease' }}>{current.sport}</h1>
+                            <p style={styles.heroSub}>India's #1 Sports Turf Booking Platform</p>
+                        </div>
+                        <div style={styles.dotsRow}>
+                            {slides.map((s, i) => (
+                                <button key={i} className="sport-dot" onClick={() => setActiveSlide(i)} style={{ ...styles.dot, background: i === activeSlide ? s.color : 'rgba(255,255,255,0.2)', width: i === activeSlide ? '32px' : '10px', boxShadow: i === activeSlide ? `0 0 10px ${s.color}` : 'none' }}/>
+                            ))}
+                        </div>
+                        <div style={styles.statsRow}>
+                            {[{ val: '14+', label: 'Turfs' }, { val: '5', label: 'Sports' }, { val: '3', label: 'Cities' }, { val: '24/7', label: 'Booking' }].map((s, i) => (
+                                <div key={i} style={styles.statItem}>
+                                    <p style={{ ...styles.statVal, color: current.color }}>{s.val}</p>
+                                    <p style={styles.statLabel}>{s.label}</p>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    /* MOBILE TOP HEADER */
+                    <div style={styles.mobileHeader}>
+                        <div style={styles.logo}>
+                            <span style={styles.logoEmoji}>🏟️</span>
+                            <span style={styles.logoText}>BuffTURF</span>
+                        </div>
+                        <div style={styles.mobileEmoji}>
+                            <span className="sport-emoji-main" style={{ fontSize: '48px' }}>{current.emoji}</span>
+                            <span style={{ ...styles.mobileSportName, color: current.color }}>{current.sport}</span>
+                        </div>
+                    </div>
+                )}
 
                 {/* RIGHT — Login Form */}
-                <div style={styles.rightSide}>
+                <div style={{ ...styles.rightSide, width: isMobile ? '100%' : '420px' }}>
                     <div className="form-wrap" style={styles.glassCard}>
 
-                        {/* Card top accent */}
-                        <div style={{
-                            ...styles.cardAccent,
-                            background: `linear-gradient(90deg, ${current.color}, ${current.color}44)`,
-                            transition: 'background 0.5s ease',
-                        }}/>
+                        <div style={{ ...styles.cardAccent, background: `linear-gradient(90deg, ${current.color}, ${current.color}44)`, transition: 'background 0.5s ease' }}/>
 
-                        {/* Header */}
                         <div style={styles.cardHeader}>
                             <h2 style={styles.cardTitle}>Welcome Back 👋</h2>
                             <p style={styles.cardSub}>Sign in to book your turf</p>
@@ -193,110 +149,50 @@ function Login() {
                         {/* Sport pills */}
                         <div style={styles.pillsRow}>
                             {slides.map((s, i) => (
-                                <button
-                                    key={i}
-                                    onClick={() => setActiveSlide(i)}
-                                    style={{
-                                        ...styles.pill,
-                                        background: i === activeSlide ? s.color + '22' : 'transparent',
-                                        border: `1px solid ${i === activeSlide ? s.color + '66' : 'rgba(255,255,255,0.1)'}`,
-                                        transform: i === activeSlide ? 'scale(1.1)' : 'scale(1)',
-                                        transition: 'all 0.2s',
-                                    }}
-                                >
+                                <button key={i} onClick={() => setActiveSlide(i)} style={{ ...styles.pill, background: i === activeSlide ? s.color + '22' : 'transparent', border: `1px solid ${i === activeSlide ? s.color + '66' : 'rgba(255,255,255,0.1)'}`, transform: i === activeSlide ? 'scale(1.1)' : 'scale(1)', transition: 'all 0.2s' }}>
                                     {s.emoji}
                                 </button>
                             ))}
                         </div>
 
-                        {/* Error */}
-                        {error && (
-                            <div style={styles.errorBox}>
-                                ❌ {error}
-                            </div>
-                        )}
+                        {error && <div style={styles.errorBox}>❌ {error}</div>}
 
-                        {/* Form */}
                         <form onSubmit={handleLogin}>
                             <div style={styles.field}>
                                 <label style={styles.label}>Username</label>
-                                <div style={{
-                                    ...styles.inputBox,
-                                    borderColor: username ? current.color + '88' : 'rgba(255,255,255,0.1)',
-                                    transition: 'border-color 0.2s',
-                                }}>
+                                <div style={{ ...styles.inputBox, borderColor: username ? current.color + '88' : 'rgba(255,255,255,0.1)' }}>
                                     <span style={styles.inputIcon}>👤</span>
-                                    <input
-                                        style={styles.input}
-                                        type="text"
-                                        placeholder="Enter your username"
-                                        value={username}
-                                        onChange={e => setUsername(e.target.value)}
-                                        required
-                                    />
+                                    <input style={styles.input} type="text" placeholder="Enter your username" value={username} onChange={e => setUsername(e.target.value)} required/>
                                 </div>
                             </div>
 
                             <div style={styles.field}>
                                 <label style={styles.label}>Password</label>
-                                <div style={{
-                                    ...styles.inputBox,
-                                    borderColor: password ? current.color + '88' : 'rgba(255,255,255,0.1)',
-                                    transition: 'border-color 0.2s',
-                                }}>
+                                <div style={{ ...styles.inputBox, borderColor: password ? current.color + '88' : 'rgba(255,255,255,0.1)' }}>
                                     <span style={styles.inputIcon}>🔒</span>
-                                    <input
-                                        style={styles.input}
-                                        type="password"
-                                        placeholder="Enter your password"
-                                        value={password}
-                                        onChange={e => setPassword(e.target.value)}
-                                        required
-                                    />
+                                    <input style={styles.input} type="password" placeholder="Enter your password" value={password} onChange={e => setPassword(e.target.value)} required/>
                                 </div>
                             </div>
 
-                            <button
-                                className="login-btn"
-                                type="submit"
-                                disabled={loading}
-                                style={{
-                                    ...styles.loginBtn,
-                                    background: loading ? '#334155' : `linear-gradient(135deg, ${current.color} 0%, ${current.color}bb 100%)`,
-                                    cursor: loading ? 'not-allowed' : 'pointer',
-                                    transition: 'all 0.3s ease',
-                                }}
-                            >
+                            <button className="login-btn" type="submit" disabled={loading} style={{ ...styles.loginBtn, background: loading ? '#334155' : `linear-gradient(135deg, ${current.color} 0%, ${current.color}bb 100%)`, cursor: loading ? 'not-allowed' : 'pointer' }}>
                                 {loading ? '⏳ Logging in...' : '🚀 Login to BuffTURF'}
                             </button>
                         </form>
 
-                        {/* Divider */}
                         <div style={styles.divider}>
                             <div style={styles.divLine}/>
                             <span style={styles.divText}>New here?</span>
                             <div style={styles.divLine}/>
                         </div>
 
-                        {/* Register */}
-                        <Link to="/register" style={{textDecoration: 'none'}}>
-                            <button
-                                className="register-btn"
-                                style={{
-                                    ...styles.registerBtn,
-                                    border: `1.5px solid ${current.color}44`,
-                                    color: current.color,
-                                    transition: 'all 0.3s',
-                                }}
-                            >
+                        <Link to="/register" style={{ textDecoration: 'none' }}>
+                            <button className="register-btn" style={{ ...styles.registerBtn, border: `1.5px solid ${current.color}44`, color: current.color }}>
                                 🏟️ Create Free Account
                             </button>
                         </Link>
 
                         <p style={styles.backHome}>
-                            <Link to="/" style={{color: 'rgba(255,255,255,0.3)', fontSize: '13px', textDecoration: 'none'}}>
-                                ← Back to Home
-                            </Link>
+                            <Link to="/" style={{ color: 'rgba(255,255,255,0.3)', fontSize: '13px', textDecoration: 'none' }}>← Back to Home</Link>
                         </p>
                     </div>
                 </div>
@@ -306,271 +202,55 @@ function Login() {
 }
 
 const styles = {
-    page: {
-        minHeight: '100vh',
-        fontFamily: "'Barlow', sans-serif",
-        position: 'relative',
-        overflow: 'hidden',
-    },
-    bgContainer: {
-        position: 'fixed',
-        inset: 0,
-        zIndex: 0,
-    },
-    bgSlide: {
-        position: 'absolute',
-        inset: 0,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-    },
-    overlay: {
-        position: 'absolute',
-        inset: 0,
-    },
-    colorTint: {
-        position: 'absolute',
-        inset: 0,
-    },
-    content: {
-        position: 'relative',
-        zIndex: 1,
-        display: 'flex',
-        minHeight: '100vh',
-        alignItems: 'center',
-        padding: '40px',
-        gap: '60px',
-        maxWidth: '1200px',
-        margin: '0 auto',
-    },
+    page: { minHeight: '100vh', fontFamily: "'Barlow', sans-serif", position: 'relative', overflow: 'hidden' },
+    bgContainer: { position: 'fixed', inset: 0, zIndex: 0 },
+    bgSlide: { position: 'absolute', inset: 0, backgroundSize: 'cover', backgroundPosition: 'center' },
+    overlay: { position: 'absolute', inset: 0 },
+    colorTint: { position: 'absolute', inset: 0 },
+    content: { position: 'relative', zIndex: 1, display: 'flex', minHeight: '100vh', maxWidth: '1200px', margin: '0 auto' },
+
+    // MOBILE HEADER
+    mobileHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '8px' },
+    mobileEmoji: { display: 'flex', alignItems: 'center', gap: '10px' },
+    mobileSportName: { fontFamily: "'Bebas Neue', sans-serif", fontSize: '22px', letterSpacing: '3px' },
 
     // LEFT
-    leftSide: {
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '32px',
-    },
-    logo: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-    },
-    logoEmoji: { fontSize: '32px' },
-    logoText: {
-        fontFamily: "'Bebas Neue', sans-serif",
-        color: '#ffffff',
-        fontSize: '32px',
-        letterSpacing: '4px',
-        textShadow: '0 2px 20px rgba(0,0,0,0.5)',
-    },
+    leftSide: { flex: 1, display: 'flex', flexDirection: 'column', gap: '32px' },
+    logo: { display: 'flex', alignItems: 'center', gap: '12px' },
+    logoEmoji: { fontSize: '28px' },
+    logoText: { fontFamily: "'Bebas Neue', sans-serif", color: '#ffffff', fontSize: '28px', letterSpacing: '4px' },
     heroSection: { textAlign: 'center' },
-    emojiCircle: {
-        width: '180px',
-        height: '180px',
-        borderRadius: '50%',
-        background: 'rgba(255,255,255,0.05)',
-        backdropFilter: 'blur(10px)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        margin: '0 auto 20px auto',
-    },
-    heroTitle: {
-        fontFamily: "'Bebas Neue', sans-serif",
-        fontSize: '56px',
-        letterSpacing: '5px',
-        margin: '0 0 8px 0',
-        textShadow: '0 4px 30px rgba(0,0,0,0.5)',
-    },
-    heroSub: {
-        color: 'rgba(255,255,255,0.5)',
-        fontSize: '15px',
-        margin: 0,
-    },
-    dotsRow: {
-        display: 'flex',
-        gap: '8px',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    dot: {
-        height: '10px',
-        borderRadius: '5px',
-        border: 'none',
-        padding: 0,
-    },
-    statsRow: {
-        display: 'flex',
-        gap: '0',
-        background: 'rgba(255,255,255,0.05)',
-        backdropFilter: 'blur(20px)',
-        borderRadius: '16px',
-        border: '1px solid rgba(255,255,255,0.1)',
-        overflow: 'hidden',
-    },
-    statItem: {
-        flex: 1,
-        textAlign: 'center',
-        padding: '16px 8px',
-        borderRight: '1px solid rgba(255,255,255,0.08)',
-    },
-    statVal: {
-        fontFamily: "'Bebas Neue', sans-serif",
-        fontSize: '28px',
-        letterSpacing: '2px',
-        margin: '0 0 2px 0',
-    },
-    statLabel: {
-        color: 'rgba(255,255,255,0.4)',
-        fontSize: '11px',
-        textTransform: 'uppercase',
-        letterSpacing: '1px',
-        margin: 0,
-    },
+    emojiCircle: { width: '180px', height: '180px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px auto' },
+    heroTitle: { fontFamily: "'Bebas Neue', sans-serif", fontSize: '56px', letterSpacing: '5px', margin: '0 0 8px 0' },
+    heroSub: { color: 'rgba(255,255,255,0.5)', fontSize: '15px', margin: 0 },
+    dotsRow: { display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center' },
+    dot: { height: '10px', borderRadius: '5px', border: 'none', padding: 0 },
+    statsRow: { display: 'flex', background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(20px)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' },
+    statItem: { flex: 1, textAlign: 'center', padding: '16px 8px', borderRight: '1px solid rgba(255,255,255,0.08)' },
+    statVal: { fontFamily: "'Bebas Neue', sans-serif", fontSize: '28px', letterSpacing: '2px', margin: '0 0 2px 0' },
+    statLabel: { color: 'rgba(255,255,255,0.4)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', margin: 0 },
 
-    // RIGHT — Glass Card
-    rightSide: {
-        width: '420px',
-        flexShrink: 0,
-    },
-    // glassCard: {
-    //     background: 'rgba(10, 15, 30, 0.75)',
-    //     backdropFilter: 'blur(30px)',
-    //     borderRadius: '20px',
-    //     border: '1px solid rgba(255,255,255,0.1)',
-    //     overflow: 'hidden',
-    //     boxShadow: '0 32px 80px rgba(0,0,0,0.6)',
-    // },
-    glassCard: {
-    background: 'rgba(5, 8, 18, 0.55)',
-    backdropFilter: 'blur(20px)',
-    borderRadius: '20px',
-    border: '1px solid rgba(255,255,255,0.07)',
-    overflow: 'hidden',
-    boxShadow: '0 32px 80px rgba(0,0,0,0.4)',
-},
-    cardAccent: {
-        height: '4px',
-        width: '100%',
-    },
-    cardHeader: {
-        padding: '28px 28px 0 28px',
-        marginBottom: '16px',
-    },
-    cardTitle: {
-        fontFamily: "'Bebas Neue', sans-serif",
-        color: '#ffffff',
-        fontSize: '34px',
-        letterSpacing: '2px',
-        margin: '0 0 4px 0',
-    },
-    cardSub: {
-        color: 'rgba(255,255,255,0.4)',
-        fontSize: '14px',
-        margin: 0,
-    },
-    pillsRow: {
-        display: 'flex',
-        gap: '8px',
-        padding: '0 28px',
-        marginBottom: '20px',
-        flexWrap: 'wrap',
-    },
-    pill: {
-        fontSize: '20px',
-        padding: '8px 12px',
-        borderRadius: '10px',
-        cursor: 'pointer',
-        background: 'transparent',
-    },
-    errorBox: {
-        margin: '0 28px 16px 28px',
-        background: 'rgba(239,68,68,0.15)',
-        border: '1px solid rgba(239,68,68,0.3)',
-        color: '#ef4444',
-        padding: '12px 16px',
-        borderRadius: '10px',
-        fontSize: '14px',
-    },
-    field: {
-        padding: '0 28px',
-        marginBottom: '16px',
-    },
-    label: {
-        color: 'rgba(255,255,255,0.5)',
-        fontSize: '11px',
-        fontWeight: '700',
-        textTransform: 'uppercase',
-        letterSpacing: '1px',
-        display: 'block',
-        marginBottom: '8px',
-    },
-    inputBox: {
-        display: 'flex',
-        alignItems: 'center',
-        background: 'rgba(255,255,255,0.06)',
-        border: '1.5px solid rgba(255,255,255,0.1)',
-        borderRadius: '12px',
-        padding: '0 14px',
-    },
-    inputIcon: {
-        fontSize: '16px',
-        marginRight: '10px',
-        flexShrink: 0,
-    },
-    input: {
-        flex: 1,
-        padding: '14px 0',
-        background: 'transparent',
-        border: 'none',
-        color: '#ffffff',
-        fontSize: '15px',
-    },
-    loginBtn: {
-        display: 'block',
-        width: 'calc(100% - 56px)',
-        margin: '8px 28px 0 28px',
-        padding: '15px',
-        border: 'none',
-        borderRadius: '12px',
-        color: '#000',
-        fontSize: '16px',
-        fontWeight: '800',
-        letterSpacing: '0.5px',
-        transition: 'all 0.3s ease',
-    },
-    divider: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        padding: '20px 28px 0 28px',
-    },
-    divLine: {
-        flex: 1,
-        height: '1px',
-        background: 'rgba(255,255,255,0.08)',
-    },
-    divText: {
-        color: 'rgba(255,255,255,0.3)',
-        fontSize: '12px',
-        whiteSpace: 'nowrap',
-    },
-    registerBtn: {
-        display: 'block',
-        width: 'calc(100% - 56px)',
-        margin: '12px 28px 0 28px',
-        padding: '13px',
-        background: 'transparent',
-        borderRadius: '12px',
-        fontSize: '15px',
-        fontWeight: '700',
-        cursor: 'pointer',
-    },
-    backHome: {
-        textAlign: 'center',
-        padding: '16px 28px 24px 28px',
-        margin: 0,
-    },
+    // RIGHT
+    rightSide: { flexShrink: 0 },
+    glassCard: { background: 'rgba(5, 8, 18, 0.75)', backdropFilter: 'blur(20px)', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.4)' },
+    cardAccent: { height: '4px', width: '100%' },
+    cardHeader: { padding: '24px 24px 0 24px', marginBottom: '16px' },
+    cardTitle: { fontFamily: "'Bebas Neue', sans-serif", color: '#ffffff', fontSize: '32px', letterSpacing: '2px', margin: '0 0 4px 0' },
+    cardSub: { color: 'rgba(255,255,255,0.4)', fontSize: '14px', margin: 0 },
+    pillsRow: { display: 'flex', gap: '8px', padding: '0 24px', marginBottom: '16px', flexWrap: 'wrap' },
+    pill: { fontSize: '20px', padding: '7px 11px', borderRadius: '10px', cursor: 'pointer' },
+    errorBox: { margin: '0 24px 16px 24px', background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '12px 16px', borderRadius: '10px', fontSize: '14px' },
+    field: { padding: '0 24px', marginBottom: '14px' },
+    label: { color: 'rgba(255,255,255,0.5)', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '7px' },
+    inputBox: { display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.06)', border: '1.5px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '0 14px' },
+    inputIcon: { fontSize: '16px', marginRight: '10px', flexShrink: 0 },
+    input: { flex: 1, padding: '14px 0', background: 'transparent', border: 'none', color: '#ffffff', fontSize: '15px', width: '100%' },
+    loginBtn: { display: 'block', width: 'calc(100% - 48px)', margin: '8px 24px 0 24px', padding: '15px', border: 'none', borderRadius: '12px', color: '#000', fontSize: '16px', fontWeight: '800', letterSpacing: '0.5px' },
+    divider: { display: 'flex', alignItems: 'center', gap: '12px', padding: '18px 24px 0 24px' },
+    divLine: { flex: 1, height: '1px', background: 'rgba(255,255,255,0.08)' },
+    divText: { color: 'rgba(255,255,255,0.3)', fontSize: '12px', whiteSpace: 'nowrap' },
+    registerBtn: { display: 'block', width: 'calc(100% - 48px)', margin: '12px 24px 0 24px', padding: '13px', background: 'transparent', borderRadius: '12px', fontSize: '15px', fontWeight: '700', cursor: 'pointer' },
+    backHome: { textAlign: 'center', padding: '14px 24px 22px 24px', margin: 0 },
 };
 
 export default Login;
