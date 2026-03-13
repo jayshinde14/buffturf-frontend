@@ -1,9 +1,73 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import { createBooking } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
+
+// ─── Validation helpers ──────────────────────────────────────────────────────
+const isValidName = (v) => /^[a-zA-Z\s]{2,}$/.test(v.trim()) && v.trim().split(/\s+/).length >= 2;
+const isValidPhone = (v) => /^[6-9]\d{9}$/.test(v.trim());
+const isValidGovtId = (v) => /^[a-zA-Z0-9]{6,20}$/.test(v.trim());
+const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+
+const validateField = (name, value) => {
+    switch (name) {
+        case 'fullName':
+            if (!value.trim()) return 'Full name is required';
+            if (!/^[a-zA-Z\s]+$/.test(value)) return 'Only letters and spaces allowed';
+            if (value.trim().split(/\s+/).length < 2) return 'Enter first and last name (e.g. Raj Kumar)';
+            return '';
+        case 'phone':
+            if (!value.trim()) return 'Phone number is required';
+            if (!/^\d+$/.test(value.trim())) return 'Phone must contain only digits';
+            if (!isValidPhone(value)) return 'Enter a valid 10-digit Indian mobile number (starts with 6-9)';
+            return '';
+        case 'email':
+            if (!value.trim()) return 'Email is required';
+            if (!isValidEmail(value)) return 'Enter a valid email address';
+            return '';
+        case 'govtId':
+            if (!value.trim()) return 'Government ID is required';
+            if (!isValidGovtId(value)) return 'Enter a valid ID (6-20 alphanumeric characters, no spaces)';
+            return '';
+        case 'gender':
+            if (!value) return 'Please select gender';
+            return '';
+        case 'dob':
+            if (!value) return 'Date of birth is required';
+            return '';
+        default:
+            return '';
+    }
+};
+
+const validatePlayerField = (field, value) => {
+    switch (field) {
+        case 'name':
+            if (!value.trim()) return 'Name required';
+            if (!/^[a-zA-Z\s]+$/.test(value)) return 'Letters only';
+            if (value.trim().split(/\s+/).length < 2) return 'First & last name';
+            return '';
+        case 'age':
+            if (!value) return 'Age required';
+            if (isNaN(value) || parseInt(value) < 5 || parseInt(value) > 80) return 'Enter valid age (5-80)';
+            return '';
+        case 'contact':
+            if (!value.trim()) return 'Contact required';
+            if (!isValidPhone(value)) return 'Valid 10-digit number';
+            return '';
+        case 'governmentId':
+            if (!value.trim()) return 'Govt ID required';
+            if (!isValidGovtId(value)) return 'Valid ID (6-20 chars)';
+            return '';
+        case 'gender':
+            if (!value) return 'Select gender';
+            return '';
+        default:
+            return '';
+    }
+};
+// ─────────────────────────────────────────────────────────────────────────────
 
 function BookingForm() {
     const { state } = useLocation();
@@ -18,7 +82,13 @@ function BookingForm() {
         fullName: '', phone: '', email: '',
         gender: '', govtId: '', dob: '',
     });
+    const [formErrors, setFormErrors] = useState({});
+    const [touched, setTouched] = useState({});
+
     const [players, setPlayers] = useState([]);
+    const [playerErrors, setPlayerErrors] = useState([]);
+    const [playerTouched, setPlayerTouched] = useState([]);
+
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
@@ -49,27 +119,94 @@ function BookingForm() {
         return `${hour % 12 || 12}:${m || '00'} ${ampm}`;
     };
 
-    const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+    // ─── Main form handlers ──────────────────────────────────────────
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setForm(prev => ({ ...prev, [name]: value }));
+        if (touched[name]) {
+            setFormErrors(prev => ({ ...prev, [name]: validateField(name, value) }));
+        }
+    };
 
+    const handleBlur = (e) => {
+        const { name, value } = e.target;
+        setTouched(prev => ({ ...prev, [name]: true }));
+        setFormErrors(prev => ({ ...prev, [name]: validateField(name, value) }));
+    };
+
+    // ─── Player handlers ─────────────────────────────────────────────
     const addPlayer = () => {
         if (players.length >= 9) { alert('Maximum 10 players allowed (including you)!'); return; }
-        setPlayers([...players, { name: '', age: '', gender: '', contact: '', governmentId: '' }]);
+        setPlayers(prev => [...prev, { name: '', age: '', gender: '', contact: '', governmentId: '' }]);
+        setPlayerErrors(prev => [...prev, {}]);
+        setPlayerTouched(prev => [...prev, {}]);
     };
 
     const updatePlayer = (index, field, value) => {
         const updated = [...players];
         updated[index][field] = value;
         setPlayers(updated);
+        if (playerTouched[index]?.[field]) {
+            const updatedErrors = [...playerErrors];
+            updatedErrors[index] = { ...(updatedErrors[index] || {}), [field]: validatePlayerField(field, value) };
+            setPlayerErrors(updatedErrors);
+        }
     };
 
-    const removePlayer = (index) => setPlayers(players.filter((_, i) => i !== index));
+    const blurPlayer = (index, field, value) => {
+        const updatedTouched = [...playerTouched];
+        updatedTouched[index] = { ...(updatedTouched[index] || {}), [field]: true };
+        setPlayerTouched(updatedTouched);
+        const updatedErrors = [...playerErrors];
+        updatedErrors[index] = { ...(updatedErrors[index] || {}), [field]: validatePlayerField(field, value) };
+        setPlayerErrors(updatedErrors);
+    };
 
-    // ─── RAZORPAY PAYMENT ───────────────────────────────────────────
+    const removePlayer = (index) => {
+        setPlayers(players.filter((_, i) => i !== index));
+        setPlayerErrors(playerErrors.filter((_, i) => i !== index));
+        setPlayerTouched(playerTouched.filter((_, i) => i !== index));
+    };
+
+    // ─── Input border helper ──────────────────────────────────────────
+    const inputBorder = (name) => {
+        if (!touched[name]) return '1px solid #334155';
+        return formErrors[name] ? '1px solid #ef4444' : `1px solid ${color}`;
+    };
+
+    const playerInputBorder = (index, field) => {
+        if (!playerTouched[index]?.[field]) return '1px solid #334155';
+        return playerErrors[index]?.[field] ? '1px solid #ef4444' : `1px solid ${color}`;
+    };
+
+    // ─── Submit / Payment ────────────────────────────────────────────
     const handlePayment = async () => {
-        if (!form.fullName || !form.phone || !form.email || !form.gender || !form.govtId || !form.dob) {
-            setError('Please fill all required fields!');
+        // Touch all main fields
+        const allTouched = { fullName: true, phone: true, email: true, gender: true, govtId: true, dob: true };
+        setTouched(allTouched);
+        const newFormErrors = {};
+        Object.keys(allTouched).forEach(k => { newFormErrors[k] = validateField(k, form[k]); });
+        setFormErrors(newFormErrors);
+
+        if (Object.values(newFormErrors).some(e => e)) {
+            setError('Please fix the errors in your details before proceeding.');
             return;
         }
+
+        // Touch and validate all player fields
+        const playerFields = ['name', 'age', 'contact', 'governmentId', 'gender'];
+        const newPlayerTouched = players.map(() => Object.fromEntries(playerFields.map(f => [f, true])));
+        setPlayerTouched(newPlayerTouched);
+        const newPlayerErrors = players.map(p =>
+            Object.fromEntries(playerFields.map(f => [f, validatePlayerField(f, p[f])]))
+        );
+        setPlayerErrors(newPlayerErrors);
+
+        if (newPlayerErrors.some(errs => Object.values(errs).some(e => e))) {
+            setError('Please fix the errors in player details before proceeding.');
+            return;
+        }
+
         setLoading(true);
         setError('');
 
@@ -145,7 +282,9 @@ function BookingForm() {
             setLoading(false);
         }
     };
-    // ────────────────────────────────────────────────────────────────
+
+    // helper to show inline field error
+    const FieldErr = ({ msg }) => msg ? <span style={styles.fieldErr}>⚠ {msg}</span> : null;
 
     return (
         <div style={styles.page}>
@@ -176,17 +315,17 @@ function BookingForm() {
             <div className="body-wrap" style={styles.body}>
 
                 {/* Booking Summary Card */}
-                <div className="summary-card" style={{...styles.summaryCard, borderTop: `4px solid ${color}`}}>
+                <div className="summary-card" style={{ ...styles.summaryCard, borderTop: `4px solid ${color}` }}>
                     <div style={styles.summaryLeft}>
                         <p style={styles.summaryLabel}>Booking Summary</p>
-                        <h2 style={{...styles.summaryTurf, color}}>{turf.name}</h2>
+                        <h2 style={{ ...styles.summaryTurf, color }}>{turf.name}</h2>
                         <p style={styles.summaryDetail}>📍 {turf.location}</p>
                         <p style={styles.summaryDetail}>📅 {date}</p>
                         <p style={styles.summaryDetail}>⏰ {formatTime(slot.startTime)} → {formatTime(slot.endTime)}</p>
                     </div>
                     <div className="summary-right" style={styles.summaryRight}>
                         <p style={styles.summaryPriceLabel}>Amount</p>
-                        <p className="summary-price" style={{...styles.summaryPrice, color}}>₹{turf.pricePerHour}</p>
+                        <p className="summary-price" style={{ ...styles.summaryPrice, color }}>₹{turf.pricePerHour}</p>
                         <p style={styles.summaryPriceSub}>for 1 hour</p>
                     </div>
                 </div>
@@ -199,34 +338,97 @@ function BookingForm() {
                         <p style={styles.formSub}>Fill in your information to confirm booking</p>
 
                         <div style={styles.fieldGrid}>
-                            {[
-                                { label: 'Full Name *', name: 'fullName', type: 'text', placeholder: 'Enter your full name' },
-                                { label: 'Phone Number *', name: 'phone', type: 'tel', placeholder: '+91 99999 99999' },
-                                { label: 'Email Address *', name: 'email', type: 'email', placeholder: 'your@email.com' },
-                                { label: 'Date of Birth *', name: 'dob', type: 'date', placeholder: '' },
-                                { label: 'Government ID (Aadhar/PAN) *', name: 'govtId', type: 'text', placeholder: 'Enter ID number' },
-                            ].map(f => (
-                                <div key={f.name} className="field" style={styles.field}>
-                                    <label style={styles.label}>{f.label}</label>
-                                    <input
-                                        style={styles.input}
-                                        type={f.type}
-                                        name={f.name}
-                                        placeholder={f.placeholder}
-                                        value={form[f.name]}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                            ))}
+                            {/* Full Name */}
+                            <div className="field" style={styles.field}>
+                                <label style={styles.label}>Full Name *</label>
+                                <input
+                                    style={{ ...styles.input, border: inputBorder('fullName') }}
+                                    type="text"
+                                    name="fullName"
+                                    placeholder="e.g. Raj Kumar"
+                                    value={form.fullName}
+                                    onChange={handleChange}
+                                    onBlur={handleBlur}
+                                />
+                                <FieldErr msg={touched.fullName && formErrors.fullName} />
+                            </div>
 
+                            {/* Phone */}
+                            <div className="field" style={styles.field}>
+                                <label style={styles.label}>Phone Number *</label>
+                                <input
+                                    style={{ ...styles.input, border: inputBorder('phone') }}
+                                    type="tel"
+                                    name="phone"
+                                    placeholder="10-digit mobile number"
+                                    value={form.phone}
+                                    onChange={handleChange}
+                                    onBlur={handleBlur}
+                                    maxLength={10}
+                                />
+                                <FieldErr msg={touched.phone && formErrors.phone} />
+                            </div>
+
+                            {/* Email */}
+                            <div className="field" style={styles.field}>
+                                <label style={styles.label}>Email Address *</label>
+                                <input
+                                    style={{ ...styles.input, border: inputBorder('email') }}
+                                    type="email"
+                                    name="email"
+                                    placeholder="you@example.com"
+                                    value={form.email}
+                                    onChange={handleChange}
+                                    onBlur={handleBlur}
+                                />
+                                <FieldErr msg={touched.email && formErrors.email} />
+                            </div>
+
+                            {/* DOB */}
+                            <div className="field" style={styles.field}>
+                                <label style={styles.label}>Date of Birth *</label>
+                                <input
+                                    style={{ ...styles.input, border: inputBorder('dob') }}
+                                    type="date"
+                                    name="dob"
+                                    value={form.dob}
+                                    onChange={handleChange}
+                                    onBlur={handleBlur}
+                                />
+                                <FieldErr msg={touched.dob && formErrors.dob} />
+                            </div>
+
+                            {/* Govt ID */}
+                            <div className="field" style={styles.field}>
+                                <label style={styles.label}>Government ID (Aadhar/PAN) *</label>
+                                <input
+                                    style={{ ...styles.input, border: inputBorder('govtId') }}
+                                    type="text"
+                                    name="govtId"
+                                    placeholder="Enter Aadhar or PAN number"
+                                    value={form.govtId}
+                                    onChange={handleChange}
+                                    onBlur={handleBlur}
+                                />
+                                <FieldErr msg={touched.govtId && formErrors.govtId} />
+                            </div>
+
+                            {/* Gender */}
                             <div className="field" style={styles.field}>
                                 <label style={styles.label}>Gender *</label>
-                                <select style={styles.input} name="gender" value={form.gender} onChange={handleChange}>
+                                <select
+                                    style={{ ...styles.input, border: inputBorder('gender') }}
+                                    name="gender"
+                                    value={form.gender}
+                                    onChange={handleChange}
+                                    onBlur={handleBlur}
+                                >
                                     <option value="">Select Gender</option>
                                     <option value="Male">Male</option>
                                     <option value="Female">Female</option>
                                     <option value="Other">Other</option>
                                 </select>
+                                <FieldErr msg={touched.gender && formErrors.gender} />
                             </div>
                         </div>
                     </div>
@@ -238,52 +440,92 @@ function BookingForm() {
                                 <h2 style={styles.formTitle}>👥 Add Friends</h2>
                                 <p style={styles.formSub}>{players.length}/9 friends added (max 10 total)</p>
                             </div>
-                            <button style={{...styles.addPlayerBtn, background: color}} onClick={addPlayer}>
+                            <button style={{ ...styles.addPlayerBtn, background: color }} onClick={addPlayer}>
                                 + Add Friend
                             </button>
                         </div>
 
                         {players.length === 0 ? (
                             <div style={styles.noPlayers}>
-                                <p style={{fontSize: '40px', marginBottom: '8px'}}>👥</p>
-                                <p style={{color: '#94a3b8', fontSize: '14px'}}>No friends added yet</p>
-                                <p style={{color: '#64748b', fontSize: '12px'}}>Click "Add Friend" to add teammates!</p>
+                                <p style={{ fontSize: '40px', marginBottom: '8px' }}>👥</p>
+                                <p style={{ color: '#94a3b8', fontSize: '14px' }}>No friends added yet</p>
+                                <p style={{ color: '#64748b', fontSize: '12px' }}>Click "Add Friend" to add teammates!</p>
                             </div>
                         ) : (
                             <div style={styles.playersList}>
                                 {players.map((p, i) => (
                                     <div key={i} style={styles.playerCard}>
                                         <div style={styles.playerCardHeader}>
-                                            <span style={{...styles.playerNum, background: color}}>P{i + 2}</span>
-                                            <span style={{color: '#ffffff', fontSize: '14px', fontWeight: '700'}}>Player {i + 2}</span>
+                                            <span style={{ ...styles.playerNum, background: color }}>P{i + 2}</span>
+                                            <span style={{ color: '#ffffff', fontSize: '14px', fontWeight: '700' }}>Player {i + 2}</span>
                                             <button style={styles.removeBtn} onClick={() => removePlayer(i)}>✕</button>
                                         </div>
                                         <div className="player-fields" style={styles.playerFields}>
-                                            {[
-                                                { ph: 'Full Name', field: 'name', type: 'text' },
-                                                { ph: 'Age', field: 'age', type: 'number' },
-                                                { ph: 'Contact', field: 'contact', type: 'tel' },
-                                                { ph: 'Govt ID', field: 'governmentId', type: 'text' },
-                                            ].map(f => (
+                                            {/* Name */}
+                                            <div style={styles.playerFieldWrap}>
                                                 <input
-                                                    key={f.field}
-                                                    style={styles.playerInput}
-                                                    type={f.type}
-                                                    placeholder={f.ph}
-                                                    value={p[f.field]}
-                                                    onChange={e => updatePlayer(i, f.field, e.target.value)}
+                                                    style={{ ...styles.playerInput, border: playerInputBorder(i, 'name') }}
+                                                    type="text"
+                                                    placeholder="Full Name"
+                                                    value={p.name}
+                                                    onChange={e => updatePlayer(i, 'name', e.target.value)}
+                                                    onBlur={e => blurPlayer(i, 'name', e.target.value)}
                                                 />
-                                            ))}
-                                            <select
-                                                style={styles.playerInput}
-                                                value={p.gender}
-                                                onChange={e => updatePlayer(i, 'gender', e.target.value)}
-                                            >
-                                                <option value="">Gender</option>
-                                                <option value="Male">Male</option>
-                                                <option value="Female">Female</option>
-                                                <option value="Other">Other</option>
-                                            </select>
+                                                <FieldErr msg={playerTouched[i]?.name && playerErrors[i]?.name} />
+                                            </div>
+                                            {/* Age */}
+                                            <div style={styles.playerFieldWrap}>
+                                                <input
+                                                    style={{ ...styles.playerInput, border: playerInputBorder(i, 'age') }}
+                                                    type="number"
+                                                    placeholder="Age"
+                                                    value={p.age}
+                                                    onChange={e => updatePlayer(i, 'age', e.target.value)}
+                                                    onBlur={e => blurPlayer(i, 'age', e.target.value)}
+                                                    min={5} max={80}
+                                                />
+                                                <FieldErr msg={playerTouched[i]?.age && playerErrors[i]?.age} />
+                                            </div>
+                                            {/* Contact */}
+                                            <div style={styles.playerFieldWrap}>
+                                                <input
+                                                    style={{ ...styles.playerInput, border: playerInputBorder(i, 'contact') }}
+                                                    type="tel"
+                                                    placeholder="Contact (10 digits)"
+                                                    value={p.contact}
+                                                    onChange={e => updatePlayer(i, 'contact', e.target.value)}
+                                                    onBlur={e => blurPlayer(i, 'contact', e.target.value)}
+                                                    maxLength={10}
+                                                />
+                                                <FieldErr msg={playerTouched[i]?.contact && playerErrors[i]?.contact} />
+                                            </div>
+                                            {/* Govt ID */}
+                                            <div style={styles.playerFieldWrap}>
+                                                <input
+                                                    style={{ ...styles.playerInput, border: playerInputBorder(i, 'governmentId') }}
+                                                    type="text"
+                                                    placeholder="Govt ID"
+                                                    value={p.governmentId}
+                                                    onChange={e => updatePlayer(i, 'governmentId', e.target.value)}
+                                                    onBlur={e => blurPlayer(i, 'governmentId', e.target.value)}
+                                                />
+                                                <FieldErr msg={playerTouched[i]?.governmentId && playerErrors[i]?.governmentId} />
+                                            </div>
+                                            {/* Gender */}
+                                            <div style={styles.playerFieldWrap}>
+                                                <select
+                                                    style={{ ...styles.playerInput, border: playerInputBorder(i, 'gender') }}
+                                                    value={p.gender}
+                                                    onChange={e => updatePlayer(i, 'gender', e.target.value)}
+                                                    onBlur={e => blurPlayer(i, 'gender', e.target.value)}
+                                                >
+                                                    <option value="">Gender</option>
+                                                    <option value="Male">Male</option>
+                                                    <option value="Female">Female</option>
+                                                    <option value="Other">Other</option>
+                                                </select>
+                                                <FieldErr msg={playerTouched[i]?.gender && playerErrors[i]?.gender} />
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -297,23 +539,23 @@ function BookingForm() {
 
                 {/* Payment Notice */}
                 <div className="payment-notice" style={styles.paymentNotice}>
-                    <span style={{fontSize: '20px'}}>🔒</span>
+                    <span style={{ fontSize: '20px' }}>🔒</span>
                     <div>
-                        <p style={{color: '#ffffff', fontWeight: '700', margin: '0 0 2px 0', fontSize: '14px'}}>
+                        <p style={{ color: '#ffffff', fontWeight: '700', margin: '0 0 2px 0', fontSize: '14px' }}>
                             Secure Payment via Razorpay
                         </p>
-                        <p style={{color: '#64748b', margin: 0, fontSize: '12px'}}>
+                        <p style={{ color: '#64748b', margin: 0, fontSize: '12px' }}>
                             UPI • Cards • Net Banking • Wallets accepted
                         </p>
                     </div>
-                    <span style={{marginLeft: 'auto', color, fontWeight: '800', fontSize: '18px'}}>₹{turf.pricePerHour}</span>
+                    <span style={{ marginLeft: 'auto', color, fontWeight: '800', fontSize: '18px' }}>₹{turf.pricePerHour}</span>
                 </div>
 
                 {/* Buttons */}
                 <div className="confirm-row" style={styles.confirmRow}>
                     <button style={styles.cancelBtn} onClick={() => navigate(-1)}>← Go Back</button>
                     <button
-                        style={{...styles.confirmBtn, background: color, opacity: loading ? 0.7 : 1}}
+                        style={{ ...styles.confirmBtn, background: color, opacity: loading ? 0.7 : 1 }}
                         onClick={handlePayment}
                         disabled={loading}
                     >
@@ -344,20 +586,22 @@ const styles = {
     formCard: { background: '#111827', borderRadius: '12px', padding: '24px', border: '1px solid #1e293b' },
     formTitle: { color: '#ffffff', fontSize: '18px', fontWeight: '800', marginBottom: '4px' },
     formSub: { color: '#64748b', fontSize: '13px', marginBottom: '20px' },
-    fieldGrid: { display: 'flex', flexDirection: 'column', gap: '16px' },
+    fieldGrid: { display: 'flex', flexDirection: 'column', gap: '14px' },
     field: {},
     label: { color: '#94a3b8', fontSize: '12px', fontWeight: '700', letterSpacing: '0.5px', display: 'block', marginBottom: '6px', textTransform: 'uppercase' },
-    input: { width: '100%', padding: '12px 14px', background: '#0f172a', border: '1px solid #334155', borderRadius: '8px', color: '#ffffff', fontSize: '14px', boxSizing: 'border-box', transition: 'border-color 0.2s' },
+    input: { width: '100%', padding: '12px 14px', background: '#0f172a', borderRadius: '8px', color: '#ffffff', fontSize: '14px', boxSizing: 'border-box', transition: 'border-color 0.2s' },
+    fieldErr: { display: 'block', color: '#ef4444', fontSize: '11px', marginTop: '4px', fontWeight: '600' },
     playersTitleRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' },
     addPlayerBtn: { color: '#000', border: 'none', padding: '10px 16px', borderRadius: '8px', cursor: 'pointer', fontSize: '13px', fontWeight: '800', whiteSpace: 'nowrap' },
     noPlayers: { textAlign: 'center', padding: '40px 20px', background: '#0f172a', borderRadius: '10px', border: '1px dashed #334155' },
-    playersList: { display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '400px', overflowY: 'auto' },
+    playersList: { display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '420px', overflowY: 'auto' },
     playerCard: { background: '#0f172a', borderRadius: '10px', padding: '14px', border: '1px solid #334155' },
     playerCardHeader: { display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' },
     playerNum: { color: '#000', width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '800', flexShrink: 0 },
     removeBtn: { marginLeft: 'auto', background: '#1a0808', color: '#ef4444', border: '1px solid #ef444444', borderRadius: '6px', padding: '4px 8px', cursor: 'pointer', fontSize: '12px' },
     playerFields: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' },
-    playerInput: { padding: '8px 10px', background: '#111827', border: '1px solid #334155', borderRadius: '6px', color: '#ffffff', fontSize: '13px' },
+    playerFieldWrap: { display: 'flex', flexDirection: 'column' },
+    playerInput: { padding: '8px 10px', background: '#111827', borderRadius: '6px', color: '#ffffff', fontSize: '13px', width: '100%' },
     errorBox: { background: '#1a0808', border: '1px solid #ef444444', color: '#ef4444', padding: '14px 20px', borderRadius: '8px', marginBottom: '20px', fontSize: '14px' },
     paymentNotice: { background: '#0f172a', border: '1px solid #1e293b', borderRadius: '10px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '20px' },
     confirmRow: { display: 'flex', justifyContent: 'flex-end', gap: '12px', flexWrap: 'wrap' },
