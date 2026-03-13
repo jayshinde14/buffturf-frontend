@@ -34,8 +34,6 @@ function BookingConfirmation() {
     };
 
     const handleDownloadPDF = () => {
-        const printContent = receiptRef.current;
-        const originalBody = document.body.innerHTML;
         const printStyles = `
             <style>
                 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700;800&display=swap');
@@ -59,7 +57,6 @@ function BookingConfirmation() {
                 .receipt-footer { background: #050a14; padding: 20px; text-align: center; border-radius: 0 0 12px 12px; }
                 .receipt-code { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 4px; color: ${color}; }
                 .receipt-footer-note { color: rgba(255,255,255,0.3); font-size: 11px; margin-top: 8px; }
-                .receipt-divider { border: none; border-top: 2px dashed #e2e8f0; margin: 16px 0; }
                 .turf-hero { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
                 .turf-emoji { font-size: 32px; background: ${color}18; width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
                 .turf-name { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1px; color: #1e293b; }
@@ -84,15 +81,11 @@ function BookingConfirmation() {
                             ${new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                         </div>
                     </div>
-
                     <div class="receipt-body">
-                        <!-- Amount -->
                         <div class="receipt-amount">
                             ₹${booking.turf?.pricePerHour || 0}
                             <div style="font-size:13px; color:#64748b; font-weight:400; margin-top:4px;">Total Amount Paid</div>
                         </div>
-
-                        <!-- Turf Details -->
                         <div class="receipt-section">
                             <div class="receipt-section-title">Turf Details</div>
                             <div class="turf-hero">
@@ -102,51 +95,19 @@ function BookingConfirmation() {
                                     <div class="turf-loc">📍 ${booking.turf?.location || 'N/A'} &nbsp;•&nbsp; ${booking.turf?.sportType || ''}</div>
                                 </div>
                             </div>
-                            <div class="receipt-row">
-                                <span class="receipt-row-label">📅 Booking Date</span>
-                                <span class="receipt-row-value">${booking.bookingDate}</span>
-                            </div>
-                            <div class="receipt-row">
-                                <span class="receipt-row-label">⏰ Time Slot</span>
-                                <span class="receipt-row-value">${booking.slot ? `${formatTime(booking.slot.startTime)} → ${formatTime(booking.slot.endTime)}` : 'N/A'}</span>
-                            </div>
-                            <div class="receipt-row">
-                                <span class="receipt-row-label">👤 Booked By</span>
-                                <span class="receipt-row-value">${booking.user?.username || 'N/A'}</span>
-                            </div>
-                            <div class="receipt-row">
-                                <span class="receipt-row-label">👥 Total Players</span>
-                                <span class="receipt-row-value">${booking.players?.length || 1}</span>
-                            </div>
-                            <div class="receipt-row">
-                                <span class="receipt-row-label">📌 Status</span>
-                                <span class="status-badge">✅ CONFIRMED & PAID</span>
-                            </div>
+                            <div class="receipt-row"><span class="receipt-row-label">📅 Booking Date</span><span class="receipt-row-value">${booking.bookingDate}</span></div>
+                            <div class="receipt-row"><span class="receipt-row-label">⏰ Time Slot</span><span class="receipt-row-value">${booking.slot ? `${formatTime(booking.slot.startTime)} → ${formatTime(booking.slot.endTime)}` : 'N/A'}</span></div>
+                            <div class="receipt-row"><span class="receipt-row-label">👤 Booked By</span><span class="receipt-row-value">${booking.user?.username || 'N/A'}</span></div>
+                            <div class="receipt-row"><span class="receipt-row-label">👥 Total Players</span><span class="receipt-row-value">${booking.players?.length || 1}</span></div>
+                            <div class="receipt-row"><span class="receipt-row-label">📌 Status</span><span class="status-badge">✅ CONFIRMED & PAID</span></div>
                         </div>
-
-                        <!-- Payment Info -->
                         <div class="receipt-section">
                             <div class="receipt-section-title">Payment Details</div>
-                            <div class="receipt-row">
-                                <span class="receipt-row-label">💰 Amount</span>
-                                <span class="receipt-row-value" style="color:${color}; font-size:18px;">₹${booking.turf?.pricePerHour || 0}</span>
-                            </div>
-                            <div class="receipt-row">
-                                <span class="receipt-row-label">💳 Payment Method</span>
-                                <span class="receipt-row-value">Razorpay</span>
-                            </div>
-                            <div class="receipt-row">
-                                <span class="receipt-row-label">🧾 Booking ID</span>
-                                <span class="receipt-row-value" style="color:${color};">${booking.bookingCode}</span>
-                            </div>
-                            ${booking.paymentId ? `
-                            <div class="receipt-row" style="flex-direction: column; align-items: flex-start; gap: 4px;">
-                                <span class="receipt-row-label">🔑 Payment ID</span>
-                                <span class="payment-id">${booking.paymentId}</span>
-                            </div>` : ''}
+                            <div class="receipt-row"><span class="receipt-row-label">💰 Amount</span><span class="receipt-row-value" style="color:${color}; font-size:18px;">₹${booking.turf?.pricePerHour || 0}</span></div>
+                            <div class="receipt-row"><span class="receipt-row-label">💳 Payment Method</span><span class="receipt-row-value">Razorpay</span></div>
+                            <div class="receipt-row"><span class="receipt-row-label">🧾 Booking ID</span><span class="receipt-row-value" style="color:${color};">${booking.bookingCode}</span></div>
+                            ${booking.paymentId ? `<div class="receipt-row" style="flex-direction: column; align-items: flex-start; gap: 4px;"><span class="receipt-row-label">🔑 Payment ID</span><span class="payment-id">${booking.paymentId}</span></div>` : ''}
                         </div>
-
-                        <!-- Players List -->
                         ${booking.players && booking.players.length > 0 ? `
                         <div class="receipt-section">
                             <div class="receipt-section-title">Players (${booking.players.length})</div>
@@ -159,8 +120,6 @@ function BookingConfirmation() {
                                 </div>
                             `).join('')}
                         </div>` : ''}
-
-                        <!-- Instructions -->
                         <div class="receipt-section" style="border-left: 3px solid #f59e0b;">
                             <div class="receipt-section-title" style="color:#f59e0b;">📌 Important Instructions</div>
                             <div style="color:#64748b; font-size:13px; line-height:1.8;">
@@ -172,7 +131,6 @@ function BookingConfirmation() {
                             </div>
                         </div>
                     </div>
-
                     <div class="receipt-footer">
                         <div style="color:rgba(255,255,255,0.4); font-size:11px; text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;">Booking Reference</div>
                         <div class="receipt-code">${booking.bookingCode}</div>
@@ -187,33 +145,49 @@ function BookingConfirmation() {
         printWindow.document.write(receiptHTML);
         printWindow.document.close();
         printWindow.focus();
-        setTimeout(() => {
-            printWindow.print();
-            printWindow.close();
-        }, 500);
+        setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
     };
 
     return (
         <div style={styles.page}>
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700;800&display=swap');
+                * { box-sizing: border-box; }
                 @keyframes popIn { from { opacity:0; transform:scale(0.95) translateY(20px); } to { opacity:1; transform:scale(1) translateY(0); } }
                 @keyframes checkPop { from { transform:scale(0) rotate(-180deg); } to { transform:scale(1) rotate(0deg); } }
-                @keyframes shimmer { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
                 .receipt-card { animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards; }
-                .download-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px ${color}44 !important; }
+                .download-btn:hover { transform: translateY(-2px); }
                 .action-btn:hover { transform: translateY(-2px); }
+
+                @media (max-width: 768px) {
+                    .body-wrap { padding: 20px 16px 48px !important; }
+                    .success-title { font-size: 32px !important; }
+                    .receipt-header { flex-direction: column !important; gap: 12px !important; padding: 18px !important; }
+                    .receipt-header-right { text-align: left !important; }
+                    .amount-banner { flex-direction: column !important; gap: 8px !important; padding: 16px 18px !important; }
+                    .amount-value { font-size: 40px !important; }
+                    .receipt-body-inner { padding: 16px !important; }
+                    .action-row { flex-direction: column !important; }
+                    .action-row button { width: 100% !important; text-align: center !important; }
+                    .player-row { flex-wrap: wrap !important; gap: 6px !important; }
+                    .player-row span:nth-child(4),
+                    .player-row span:nth-child(5) { font-size: 10px !important; width: auto !important; }
+                }
+                @media (max-width: 480px) {
+                    .success-title { font-size: 26px !important; }
+                    .check-circle { width: 56px !important; height: 56px !important; font-size: 28px !important; }
+                }
             `}</style>
             <Navbar />
 
-            <div style={styles.body}>
+            <div className="body-wrap" style={styles.body}>
 
                 {/* Success Header */}
                 <div style={styles.successHeader}>
-                    <div style={{ ...styles.checkCircle, background: `linear-gradient(135deg, ${color}, ${color}bb)`, boxShadow: `0 0 40px ${color}44` }}>
+                    <div className="check-circle" style={{ ...styles.checkCircle, background: `linear-gradient(135deg, ${color}, ${color}bb)`, boxShadow: `0 0 40px ${color}44` }}>
                         ✓
                     </div>
-                    <h1 style={styles.successTitle}>Payment Successful!</h1>
+                    <h1 className="success-title" style={styles.successTitle}>Payment Successful!</h1>
                     <p style={styles.successSub}>Your turf is booked! Show this receipt to the turf owner.</p>
                 </div>
 
@@ -221,12 +195,12 @@ function BookingConfirmation() {
                 <div className="receipt-card" style={styles.receiptCard} ref={receiptRef}>
 
                     {/* Receipt Header */}
-                    <div style={{ ...styles.receiptHeader, background: `linear-gradient(135deg, #080e1f, #0c1528)` }}>
+                    <div className="receipt-header" style={{ ...styles.receiptHeader, background: `linear-gradient(135deg, #080e1f, #0c1528)` }}>
                         <div style={styles.receiptHeaderLeft}>
                             <p style={{ ...styles.logoText, color }}>BUFF<span style={{ color: '#fff' }}>TURF</span></p>
                             <p style={styles.officialText}>Official Booking Receipt</p>
                         </div>
-                        <div style={styles.receiptHeaderRight}>
+                        <div className="receipt-header-right" style={styles.receiptHeaderRight}>
                             <p style={styles.receiptIdLabel}>Receipt No.</p>
                             <p style={{ ...styles.receiptId, color }}>{booking.bookingCode}</p>
                             <span style={styles.paidBadge}>✅ PAID</span>
@@ -234,17 +208,17 @@ function BookingConfirmation() {
                     </div>
 
                     {/* Amount Banner */}
-                    <div style={{ ...styles.amountBanner, background: color + '12', borderBottom: `1px solid ${color}22` }}>
+                    <div className="amount-banner" style={{ ...styles.amountBanner, background: color + '12', borderBottom: `1px solid ${color}22` }}>
                         <div>
                             <p style={styles.amountLabel}>Total Amount Paid</p>
-                            <p style={{ ...styles.amountValue, color }}>₹{booking.turf?.pricePerHour || 0}</p>
+                            <p className="amount-value" style={{ ...styles.amountValue, color }}>₹{booking.turf?.pricePerHour || 0}</p>
                         </div>
                         <div style={styles.amountRight}>
                             <span style={{ fontSize: '48px' }}>{emoji}</span>
                         </div>
                     </div>
 
-                    <div style={styles.receiptBody}>
+                    <div className="receipt-body-inner" style={styles.receiptBody}>
 
                         {/* Turf Info */}
                         <div style={styles.section}>
@@ -303,7 +277,7 @@ function BookingConfirmation() {
                             <div style={styles.section}>
                                 <p style={styles.sectionTitle}>👥 Players ({booking.players.length})</p>
                                 <div style={styles.playersList}>
-                                    {/* Header */}
+                                    {/* Header - hide on very small screens via inline logic */}
                                     <div style={{ ...styles.playerRow, background: '#0f172a', borderRadius: '8px 8px 0 0', padding: '8px 14px' }}>
                                         <span style={{ ...styles.playerIdx, background: 'transparent', color: '#475569', fontSize: '11px' }}>#</span>
                                         <span style={{ color: '#475569', fontSize: '11px', fontWeight: '700', flex: 1, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Name</span>
@@ -312,7 +286,7 @@ function BookingConfirmation() {
                                         <span style={{ color: '#475569', fontSize: '11px', fontWeight: '700', width: '120px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Govt ID</span>
                                     </div>
                                     {booking.players.map((p, i) => (
-                                        <div key={i} style={{ ...styles.playerRow, background: i % 2 === 0 ? '#0a0f1e' : '#0f172a' }}>
+                                        <div key={i} className="player-row" style={{ ...styles.playerRow, background: i % 2 === 0 ? '#0a0f1e' : '#0f172a' }}>
                                             <span style={{ ...styles.playerIdx, background: color + '22', color }}>{i + 1}</span>
                                             <span style={{ color: '#ffffff', fontWeight: '700', flex: 1, fontSize: '13px' }}>{p.name || 'N/A'}</span>
                                             <span style={{ color: '#94a3b8', fontSize: '12px', width: '60px' }}>{p.gender || 'N/A'}</span>
@@ -347,18 +321,13 @@ function BookingConfirmation() {
                 </div>
 
                 {/* Action Buttons */}
-                <div style={styles.actionRow}>
-                    <button className="action-btn" style={styles.homeBtn} onClick={() => navigate('/')}>
-                        🏠 Go Home
-                    </button>
-                    <button className="action-btn" style={styles.myBookingsBtn} onClick={() => navigate('/my-bookings')}>
-                        📋 My Bookings
-                    </button>
+                <div className="action-row" style={styles.actionRow}>
+                    <button className="action-btn" style={styles.homeBtn} onClick={() => navigate('/')}>🏠 Go Home</button>
+                    <button className="action-btn" style={styles.myBookingsBtn} onClick={() => navigate('/my-bookings')}>📋 My Bookings</button>
                     <button className="download-btn" style={{ ...styles.downloadBtn, background: color, boxShadow: `0 4px 20px ${color}33` }} onClick={handleDownloadPDF}>
                         ⬇ Download Receipt PDF
                     </button>
                 </div>
-
             </div>
         </div>
     );
@@ -369,12 +338,10 @@ const styles = {
     center: { textAlign: 'center', padding: '80px' },
     greenBtn: { background: '#22c55e', color: '#000', border: 'none', padding: '12px 24px', borderRadius: '8px', cursor: 'pointer', fontSize: '15px', fontWeight: '800' },
     body: { maxWidth: '780px', margin: '0 auto', padding: '40px 24px 60px' },
-
     successHeader: { textAlign: 'center', marginBottom: '32px' },
     checkCircle: { width: '72px', height: '72px', borderRadius: '50%', color: '#fff', fontSize: '36px', fontWeight: '800', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px auto', animation: 'checkPop 0.6s cubic-bezier(0.34,1.56,0.64,1)' },
     successTitle: { fontFamily: "'Bebas Neue', sans-serif", color: '#ffffff', fontSize: '48px', letterSpacing: '2px', marginBottom: '8px' },
     successSub: { color: '#94a3b8', fontSize: '15px' },
-
     receiptCard: { background: '#111827', borderRadius: '16px', overflow: 'hidden', border: '1px solid #1e293b', boxShadow: '0 24px 60px rgba(0,0,0,0.6)', marginBottom: '24px' },
     receiptHeader: { padding: '24px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' },
     receiptHeaderLeft: {},
@@ -384,39 +351,30 @@ const styles = {
     receiptIdLabel: { color: 'rgba(255,255,255,0.35)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' },
     receiptId: { fontFamily: "'Bebas Neue', sans-serif", fontSize: '22px', letterSpacing: '3px', margin: '0 0 6px 0' },
     paidBadge: { background: '#22c55e22', color: '#22c55e', border: '1px solid #22c55e44', padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '800' },
-
     amountBanner: { padding: '20px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
     amountLabel: { color: '#64748b', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' },
     amountValue: { fontFamily: "'Bebas Neue', sans-serif", fontSize: '52px', letterSpacing: '2px', margin: 0, lineHeight: 1 },
     amountRight: { opacity: 0.5 },
-
     receiptBody: { padding: '24px 28px' },
     section: { marginBottom: '4px' },
     sectionTitle: { color: '#64748b', fontSize: '11px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '14px' },
-
     turfHero: { background: '#0f172a', borderRadius: '10px', padding: '16px', marginBottom: '16px' },
     turfName: { fontFamily: "'Bebas Neue', sans-serif", fontSize: '22px', letterSpacing: '1px', margin: '0 0 4px 0' },
     turfMeta: { color: '#64748b', fontSize: '13px' },
-
     detailsGrid: { display: 'flex', flexDirection: 'column', gap: '10px' },
-    detailRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#0f172a', borderRadius: '8px' },
+    detailRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: '#0f172a', borderRadius: '8px', flexWrap: 'wrap', gap: '6px' },
     detailLabel: { color: '#64748b', fontSize: '13px' },
     detailValue: { color: '#ffffff', fontSize: '14px', fontWeight: '700', textAlign: 'right' },
-
     divider: { height: '1px', background: '#1e293b', margin: '20px 0' },
-
-    playersList: { borderRadius: '10px', overflow: 'hidden', border: '1px solid #1e293b' },
+    playersList: { borderRadius: '10px', overflow: 'hidden', border: '1px solid #1e293b', overflowX: 'auto' },
     playerRow: { display: 'flex', gap: '10px', alignItems: 'center', padding: '10px 14px' },
     playerIdx: { width: '24px', height: '24px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '800', flexShrink: 0 },
-
     noteBox: { background: '#0f172a', borderRadius: '10px', padding: '16px 20px' },
     noteTitle: { color: '#f59e0b', fontSize: '13px', fontWeight: '800', marginBottom: '8px' },
     noteText: { color: '#64748b', fontSize: '13px', lineHeight: 1.8 },
-
     receiptFooter: { background: '#080e1f', padding: '16px 28px', textAlign: 'center', borderTop: '1px solid #1e293b' },
     footerBrand: { color: 'rgba(255,255,255,0.2)', fontSize: '12px', fontWeight: '700', letterSpacing: '2px', textTransform: 'uppercase', margin: '0 0 4px 0' },
     footerNote: { color: 'rgba(255,255,255,0.15)', fontSize: '11px', margin: 0 },
-
     actionRow: { display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' },
     homeBtn: { background: '#1e293b', color: '#94a3b8', border: '1px solid #334155', padding: '13px 22px', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', transition: 'all 0.2s' },
     myBookingsBtn: { background: '#1e293b', color: '#94a3b8', border: '1px solid #334155', padding: '13px 22px', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: '700', transition: 'all 0.2s' },
