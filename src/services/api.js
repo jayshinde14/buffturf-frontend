@@ -55,3 +55,5 @@ export const generateSlots = (turfId, date) =>
 export const adminCancelBooking = (id) =>
     API.put(`/api/admin/bookings/${id}/cancel`);
 export const getEarnings = () => API.get('/api/admin/earnings');
+export const login    = (data) => API.post('/api/auth/login', data);
+export const register = (data) => API.post('/api/auth/register', data);
